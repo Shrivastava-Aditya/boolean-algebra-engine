@@ -144,11 +144,19 @@ Created branch `python-rewrite` off `api-refactor`. Python rewrite will happen h
 
 ---
 
+### Prompt: "Tests obviously"
+- Wrote 48 tests across `test_models.py`, `test_parser.py`, `test_evaluator.py`, `test_synthesizer.py`
+- Covers: truth table properties, validation, prefix conversion, De Morgan's laws, distribution law, round-trip synthesis, minimization (`A.B+A.!B` → `A`)
+- 48/48 passed
+
+---
+
 ## Current State
 
 - Repo: `boolean-algebra-engine-python`
-- `core/` complete: `models.py`, `parser.py`, `evaluator.py`, `synthesizer.py`
-- **Next step: `cli/` or `tests/`**
+- `core/` complete and tested: `models.py`, `parser.py`, `evaluator.py`, `synthesizer.py`
+- `tests/` complete: 48 tests, all passing
+- **Next step: `cli/`**
 
 ---
 
