@@ -144,6 +144,11 @@ Created branch `python-rewrite` off `api-refactor`. Python rewrite will happen h
 
 ---
 
+### Prompt: "Yes document test"
+Added module-level docstrings to all 5 test files explaining scope, approach,
+and what each group of tests covers. Added per-test docstrings explaining the
+specific behaviour under test. 90/90 still passing.
+
 ### Prompt: "Yes do that and document"
 Added `test_integration.py` and `test_edge_cases.py`:
 - Integration: full pipeline round-trips, De Morgan, distribution, absorption, consensus theorem
