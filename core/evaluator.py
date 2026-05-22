@@ -1,3 +1,13 @@
+"""
+core/evaluator.py — truth table generation.
+
+Public API:
+  evaluate(expression) → (TruthTable, PerformanceMetrics)
+
+Raises ValueError for invalid expressions (delegates to parser.validate).
+Each row in the truth table is evaluated independently — this is the
+sequential baseline that CUDA will later parallelise (one thread per row).
+"""
 from __future__ import annotations
 import time
 import tracemalloc
@@ -6,6 +16,7 @@ from .parser import get_variables, validate, infix_to_prefix
 
 
 def _evaluate_prefix(prefix: str, variable_values: dict[str, int]) -> int:
+    """Evaluate a prefix expression for a single row of variable assignments."""
     stack = []
     for c in reversed(prefix):
         if c.isupper():
@@ -24,6 +35,24 @@ def _evaluate_prefix(prefix: str, variable_values: dict[str, int]) -> int:
 
 
 def evaluate(expression: str) -> tuple[TruthTable, PerformanceMetrics]:
+    """
+    Evaluate a boolean expression and return its full truth table.
+
+    Args:
+        expression: Infix boolean expression string. Variables must be
+                    uppercase letters. Operators: ! . ^ +
+
+    Returns:
+        (TruthTable, PerformanceMetrics) — truth table and timing/memory data.
+
+    Raises:
+        ValueError: If the expression fails validation.
+
+    Example:
+        table, metrics = evaluate('A.(B+C)')
+        print(table.minterms)       # [5, 6, 7]
+        print(metrics.eval_time_ms) # 0.21
+    """
     error = validate(expression)
     if error:
         raise ValueError(error)

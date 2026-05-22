@@ -1,3 +1,19 @@
+"""
+core/synthesizer.py — minimal expression synthesis via Quine-McCluskey.
+
+Public API:
+  synthesize(truth_table) → (str, PerformanceMetrics)
+
+The inverse of evaluate(): given a TruthTable, returns the minimal sum-of-
+products boolean expression that produces it. Uses the Quine-McCluskey
+algorithm: iteratively merge minterms that differ by one bit to find prime
+implicants, then select the minimum cover using essential prime implicants
+first, greedy cover for the remainder.
+
+Special cases:
+  No minterms (contradiction) → '0'
+  All minterms (tautology)    → '1'
+"""
 from __future__ import annotations
 import time
 import tracemalloc
@@ -5,6 +21,7 @@ from .models import TruthTable, PerformanceMetrics
 
 
 def _can_merge(a: str, b: str) -> tuple[bool, str]:
+    """Return (True, merged) if two implicants differ in exactly one non-dash bit."""
     diff_count = 0
     diff_pos = -1
     for i, (x, y) in enumerate(zip(a, b)):
@@ -23,11 +40,13 @@ def _can_merge(a: str, b: str) -> tuple[bool, str]:
 
 
 def _covers(implicant: str, minterm: int, n: int) -> bool:
+    """Return True if an implicant pattern covers a given minterm index."""
     bits = format(minterm, f'0{n}b')
     return all(p == '-' or p == b for p, b in zip(implicant, bits))
 
 
 def _minimum_cover(prime_implicants: list[str], minterms: list[int], n: int) -> list[str]:
+    """Select the minimum set of prime implicants that covers all minterms."""
     coverage = {pi: {m for m in minterms if _covers(pi, m, n)} for pi in prime_implicants}
     selected = []
     covered = set()
@@ -55,6 +74,7 @@ def _minimum_cover(prime_implicants: list[str], minterms: list[int], n: int) -> 
 
 
 def _pi_to_expr(pi: str, variables: list[str]) -> str:
+    """Convert a prime implicant bit pattern to a boolean product term string."""
     terms = []
     for bit, var in zip(pi, variables):
         if bit == '1':
@@ -65,6 +85,26 @@ def _pi_to_expr(pi: str, variables: list[str]) -> str:
 
 
 def synthesize(truth_table: TruthTable) -> tuple[str, PerformanceMetrics]:
+    """
+    Synthesize the minimal boolean expression for a given truth table.
+
+    Uses Quine-McCluskey to find all prime implicants, then selects the
+    minimum cover — essential prime implicants first, greedy for the rest.
+
+    Args:
+        truth_table: A TruthTable returned by evaluate().
+
+    Returns:
+        (expression, PerformanceMetrics) — minimal SOP expression string
+        and timing/memory data. Returns '0' for contradictions, '1' for
+        tautologies.
+
+    Example:
+        table, _ = evaluate('A.B+A.!B')
+        expr, metrics = synthesize(table)
+        print(expr)                          # 'A'
+        print(metrics.prime_implicant_count) # 1
+    """
     minterms = truth_table.minterms
     variables = truth_table.variables
     n = len(variables)

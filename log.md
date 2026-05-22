@@ -144,6 +144,14 @@ Created branch `python-rewrite` off `api-refactor`. Python rewrite will happen h
 
 ---
 
+### Prompt: "And document and update log if we haven't"
+Added module and function docstrings to all four core modules:
+- `models.py` — module docstring, class/property docstrings for all three dataclasses
+- `parser.py` — module docstring with operator precedence table, docstrings for all three public functions
+- `evaluator.py` — module docstring explaining CUDA context, docstrings for `_evaluate_prefix` and `evaluate()` with full Args/Returns/Example
+- `synthesizer.py` — module docstring explaining QM algorithm and special cases, docstrings for all internal helpers and `synthesize()` with full Args/Returns/Example
+90/90 tests still passing.
+
 ### Prompt: "Include machine time and memory calculator as output"
 Added `PerformanceMetrics` dataclass to `models.py` — captures `eval_time_ms`, `synth_time_ms`, `peak_memory_bytes`, `rows_evaluated`, `prime_implicant_count`. Both `evaluate()` and `synthesize()` now return `(result, PerformanceMetrics)` tuples. Updated all 90 tests to unpack tuples. Baseline numbers visible now — CUDA and caching improvements will be measurable against them.
 
