@@ -30,7 +30,12 @@ classifiers = [
 [project.optional-dependencies]
 cli = ["typer>=0.12.0", "rich>=13.0.0"]
 mcp = ["mcp[cli]>=1.0.0"]
-dev = ["pytest>=8.0.0"]
+nl-anthropic = ["anthropic>=0.50.0"]
+nl-openai = ["openai>=1.0.0"]
+nl = ["anthropic>=0.50.0"]
+api = ["fastapi>=0.100.0", "uvicorn>=0.20.0"]
+api-cache = ["fastapi>=0.100.0", "uvicorn>=0.20.0", "redis>=5.0.0"]
+dev = ["pytest>=8.0.0", "httpx>=0.24.0"]
 
 [project.scripts]
 boolcalc = "cli.main:app"
@@ -41,7 +46,7 @@ Repository = "https://github.com/Shrivastava-Aditya/boolean-algebra-engine-pytho
 Issues = "https://github.com/Shrivastava-Aditya/boolean-algebra-engine-python/issues"
 
 [tool.setuptools.packages.find]
-include = ["core*", "cli*", "mcp_server*", "api*"]
+include = ["core*", "cli*", "mcp_server*", "api*", "nl*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

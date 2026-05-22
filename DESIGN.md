@@ -147,19 +147,110 @@ Use case: Claude stops guessing at boolean logic and computes it. Particularly u
 
 ## AI Layer (Phase 3)
 
-Natural language → expression via Claude API, then expression → truth table via core engine, then result → plain English explanation via Claude API.
+Natural language → expression via LLM, then expression → truth table via core engine, then result → plain English explanation via LLM. Supports any provider: Anthropic, OpenAI, Ollama (local), or any OpenAI-compatible endpoint.
 
 ```
 "lights on when door open or motion detected but not both"
-        ↓  Claude parses (Claude API)
-      D^M
+        ↓  LLM parses (provider-agnostic)
+      D^M  + variable map: {D: "door open", M: "motion detected"}
         ↓  core engine
-   truth table
+   truth table  ← CUDA accelerates this for large variable counts
         ↓  synthesizer
    minimal form: D^M
-        ↓  Claude explains (Claude API)
+        ↓  LLM explains (provider-agnostic)
 "Output is 1 exactly when door and motion states differ"
 ```
+
+### Multi-rule pipeline — correct design
+
+Each rule is a separate parse call. Variable assignments thread through as shared state:
+
+```
+Rule 1 → parse(sentence, variable_map={})           → expression + updated map
+Rule 2 → parse(sentence, variable_map from Rule 1)  → expression + updated map
+Rule 3 → parse(sentence, variable_map from Rule 2)  → expression + updated map
+       → engine evaluates all expressions together
+       → explain call → plain English summary
+```
+
+Each call has one responsibility. Variable map is explicit, inspectable, cacheable via Redis.
+
+### Acceleration layers
+
+- **Redis** — cache variable maps, parse results, truth tables. Same expression always
+  produces the same result — skip recomputation on repeat. Session state for multi-turn.
+- **CUDA** — `2^n` rows are independent. Each row maps 1:1 to a GPU thread.
+  Drop-in replacement for the Python evaluation loop in `core/evaluator.py`.
+
+---
+
+## REST API Plan (Phase 4)
+
+FastAPI. Stateless endpoints wrapping core directly. Redis for caching.
+Deployable to any cloud (AWS Lambda, GCP Cloud Run, Fly.io, bare VM).
+
+### Endpoints
+
+```
+POST /evaluate
+  body: { "expression": "A.(B+C)" }
+  returns: { expression, variables, rows, satisfiable, tautology,
+             minterms, maxterms, eval_time_ms }
+
+POST /simplify
+  body: { "expression": "A.B+A.!B" }
+  returns: { original, minimal, changed, prime_implicant_count }
+
+POST /equivalent
+  body: { "expression1": "A.(B+C)", "expression2": "A.B+A.C" }
+  returns: { equivalent, differing_rows }
+
+POST /satisfiable
+  body: { "expression": "A.!A" }
+  returns: { satisfiable, example }
+
+POST /check-rules
+  body: { "rules": ["A.B", "!A+!B", "A.!A"] }
+  returns: { rules: [...], pairwise: [...], summary: {...} }
+
+POST /nl/ask
+  body: { "sentence": "lights on when door open or motion detected",
+          "provider": "anthropic" }
+  returns: { expression, variables, minimal, satisfiable, explanation, rows }
+
+POST /nl/check-rules
+  body: { "rules": ["grant if admin", "deny if admin"],
+          "provider": "anthropic" }
+  returns: { rules, pairwise, summary, parse_errors }
+```
+
+### Headers
+```
+X-API-Key: <key>          authentication (Pro/Team tiers)
+X-Cache: HIT | MISS       Redis cache status
+X-Eval-Time-Ms: 0.21      engine timing
+```
+
+### Caching strategy
+```
+/evaluate, /simplify, /equivalent, /satisfiable  →  cache by expression (Redis, TTL 24h)
+/check-rules                                     →  cache by sorted rule set (Redis, TTL 1h)
+/nl/ask                                          →  cache parse result by sentence (Redis, TTL 1h)
+/nl/check-rules                                  →  no cache (variable map is stateful)
+```
+
+### Error responses
+```json
+{ "error": "invalid_expression",
+  "message": "Unknown character '@' at position 3",
+  "expression": "A@B" }
+```
+
+### Deployment
+- Docker container, single `Dockerfile`
+- `uvicorn api.routes:app --host 0.0.0.0 --port 8080`
+- Environment vars: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `REDIS_URL`
+- Health check: `GET /health → { status: ok, version: 0.1.0 }`
 
 ---
 
@@ -196,6 +287,51 @@ Natural language → expression via Claude API, then expression → truth table 
 18. **pip-installable library** — `evaluate()` and `synthesize()` as clean Python functions, embeddable in any project
 19. **REST API** — cloud-deployable via FastAPI, callable from any language
 20. **Jupyter notebooks** — interactive boolean exploration, visualise truth tables, demo layer for teaching
+
+### Cybersecurity
+21. **Firewall rule auditing** — model firewall and network ACL rules as boolean expressions, find conditions that always allow traffic or always block it regardless of input
+22. **Access policy verification** — check IAM and RBAC policies for contradictions — rules that can never be satisfied or always grant access unconditionally
+23. **Security constraint checking** — verify that no combination of flags, roles, or conditions creates an unintended open path in an authentication or authorisation system
+
+### Smart Contracts
+24. **Pre-deployment logic verification** — Solidity and EVM contract conditions modeled as boolean expressions, verified before deploying on-chain where a logic bug costs real money and cannot be undone
+25. **Condition equivalence across contract versions** — check that updated contract logic is equivalent to the original, or find exactly which cases changed
+26. **Contradiction detection in contract clauses** — find clauses that can never be triggered or always override each other
+
+### Legal / Compliance
+27. **Contract clause verification** — model conditional contract clauses as boolean rules, check if any two clauses are contradictory or if a condition can never be satisfied
+28. **Regulatory rule consistency** — compliance rulesets often span dozens of conditions across multiple documents; find conflicts before they become violations
+29. **Policy deduplication** — identify equivalent rules across policy documents that can be consolidated
+
+### Healthcare
+30. **Treatment eligibility rules** — clinical decision rules modeled as boolean expressions, verified so no patient falls through contradictory or unreachable criteria
+31. **Clinical decision tree verification** — check that every branch of a decision protocol is reachable and that no combination of symptoms leads to an undefined outcome
+32. **Drug interaction logic** — contraindication rules expressed as boolean conditions, verified for completeness and internal consistency
+
+### Financial Services
+33. **Trading rule verification** — model algorithmic trading conditions, find rules that can never fire or always fire regardless of market state
+34. **Risk condition auditing** — verify that risk gate logic has no contradictions — conditions where a trade is simultaneously allowed and blocked
+35. **Regulatory compliance checks** — financial regulations often combine multiple boolean conditions; verify the implementation matches the written rule exactly
+
+### CI/CD and DevOps
+36. **Deployment gate logic** — verify pipeline conditions (branch, environment, test status, flag) have no contradictions that would permanently block or always skip a stage
+37. **Feature flag consistency** — check that feature flag combinations don't produce contradictory behaviour across services
+38. **Environment promotion rules** — verify that promotion conditions between dev/staging/prod are logically consistent and have no unreachable states
+
+### Game Development
+39. **Game state machine verification** — model trigger conditions and state transitions as boolean expressions, find unreachable states or always-true transitions
+40. **Quest and unlock logic** — verify that achievement and unlock conditions are satisfiable — that the player can actually reach them
+41. **Balancing condition checks** — find conditions where a game mechanic always fires or never fires regardless of player state
+
+### Database and Query Optimisation
+42. **WHERE clause simplification** — convert complex SQL WHERE conditions to minimal boolean form before execution planning
+43. **Query equivalence checking** — verify two queries with different WHERE clauses return identical result sets for all inputs
+44. **Dead filter detection** — find filter conditions that are contradictions — they always return zero rows
+
+### Robotics and Automation
+45. **Sensor trigger verification** — model actuator trigger conditions as boolean expressions, verify safety interlocks can never be simultaneously satisfied with activation conditions
+46. **Safety interlock auditing** — check that no combination of sensor states bypasses a safety condition
+47. **Control logic minimization** — reduce gate logic in embedded control systems before implementation
 
 ---
 
@@ -278,7 +414,7 @@ Every serious AI deployment has this problem. Nobody has the tooling for it.
 | 2 | Tests — 90 tests across all core modules | Done |
 | 3 | CLI — REPL + one-shot, all output formats | Done |
 | 4 | MCP server | Done |
-| 5 | REST API (FastAPI) | Planned |
+| 5 | REST API (FastAPI) | Done |
 | 6 | Web UI (Streamlit or React on FastAPI) | Planned |
 | 7 | Claude API NL layer | Planned |
 | 8 | CUDA acceleration for truth table evaluation | Planned |

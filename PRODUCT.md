@@ -13,6 +13,31 @@ prompt engineers, and anyone who needs to verify that their rules are logically 
 
 ---
 
+## Why it exists — the human brain problem
+
+Human brains are good at language. Bad at exhaustive enumeration.
+
+You can read "grant access if admin" and "deny access if admin" separately and both
+sound reasonable. The contradiction only becomes obvious when you force yourself to
+hold both in your head simultaneously — which almost nobody does, because it's
+cognitively expensive and easy to skip.
+
+Now multiply that by 15 rules, written by different people over 3 months, with nested
+conditions and double negations. Nobody catches every contradiction manually. Not because
+they're not smart — because that's not how human reasoning works.
+
+LLMs have the same failure mode. They process language, find patterns, predict what
+sounds right. Simple contradictions they'll catch. Five nested conditions with a double
+negation — they'll confidently give you the wrong answer because the language pattern
+matched something in training.
+
+The engine doesn't read. It computes every combination. The contradiction is unavoidable.
+
+That gap — between "sounds right" and "is right" — is what this fills. It exists in
+every codebase, every system prompt, every set of business rules ever written by a human.
+
+---
+
 ## What it does today
 
 **Forward:** Give it a boolean expression, it returns the full truth table — every possible
@@ -330,3 +355,248 @@ deployable.
 Academic rigour + AI-native integration + natural language interface = one product.
 
 That stack, end to end, is not shipped by anyone right now.
+
+---
+
+## Replicability — honest assessment
+
+### What's easy to replicate
+
+The core algorithms are all textbook and decades old:
+
+| Component | Algorithm | Age | Difficulty |
+|---|---|---|---|
+| Parser | Shunting-yard | 1960s | Trivial |
+| Evaluator | Prefix stack | Textbook | ~15 lines |
+| Synthesizer | Quine-McCluskey | 1950s | ~100 lines |
+| CLI | typer + rich | Standard | Boilerplate |
+| MCP server | FastMCP | Standard | Thin wrapper |
+
+A good developer could replicate the core engine in a week. The algorithms are
+in every discrete mathematics textbook. There is no novel computation here.
+
+### What's not easy to replicate
+
+- **The specific problem framing** — `check_prompt_logic` as a product for prompt
+  engineers is not an obvious idea. It took understanding both the AI deployment
+  problem and the boolean algebra solution simultaneously.
+- **The layered architecture** — `core/` with zero external dependencies, independently
+  testable and wrappable by anything. Sounds simple, rarely done right.
+- **The MCP integration design** — knowing which tools to expose, how to describe them
+  so an LLM uses them correctly, and how to make the results readable mid-conversation.
+- **90 tests covering all edge cases** — including all invalid input paths, operator
+  precedence edge cases, 4-5 variable stress tests, round-trip synthesis verification.
+- **The NL layer design** — knowing where Claude handles ambiguity and where the engine
+  handles certainty, and how to hand off cleanly between them.
+- **Distribution** — pip package, REPL, MCP plugin, REST API, notebook-ready.
+  Each is a small amount of work; having all of them is not.
+- **The product insight** — understanding that the algorithm is a commodity and the
+  moat is the workflow, the packaging, and the AI-native integration.
+
+### The real barrier
+
+The code can be replicated. The month of thinking about what to build with it,
+how to position it, and what problems it actually solves — that's what's in
+`PRODUCT.md` and `DESIGN.md`. That's the harder thing to copy.
+
+### Use cases — scope
+
+The engine applies to any domain where conditional logic must be verified with
+certainty. Currently documented across 11 domains, 47 use cases:
+
+- Developer tooling
+- Education
+- Digital / hardware design
+- AI / LLM accuracy
+- Deep learning / BNNs
+- Packaging / integration
+- Cybersecurity
+- Smart contracts
+- Legal / compliance
+- Healthcare
+- Financial services
+- CI/CD and DevOps
+- Game development
+- Database and query optimisation
+- Robotics and automation
+
+The pattern is the same across all of them: rules exist, someone needs to know
+if they're consistent, and right now they're reading them manually and hoping.
+
+---
+
+## Pricing — when and how
+
+### Should it be paid from day one?
+
+No. But not fully free either.
+
+The first problem is not monetisation — it's distribution. Nobody knows this exists
+yet. Charging before there's any organic usage means asking people to pay for something
+they've never heard of and have no reason to trust. The result is zero users instead
+of a few who might tell others.
+
+The open source core is also already GPL-3.0. Anyone can clone it and run it locally
+for free. Charging for the CLI before there's a product story built around it just
+pushes people to self-host.
+
+At the same time — fully free signals no value. And the NL layer burns Claude API
+credits with no return. That gets painful fast at any real usage volume.
+
+### The staged approach
+
+| Stage | What's free | What's paid | Trigger |
+|---|---|---|---|
+| **Now** | Everything — CLI, pip, MCP | Nothing | Get users, get feedback |
+| **After NL layer** | CLI, pip, MCP | Hosted NL interface, `check_prompt_logic` web UI | First paying users |
+| **After web UI** | CLI, pip, MCP | Pro + Team tiers | Scale |
+
+### The move right now
+
+Get 10–20 people using it. Prompt engineers, developers building agent pipelines,
+anyone deploying LLMs with complex system prompts. Give it to them free. Watch what
+they actually use it for. The thing they keep coming back to — that's what you charge for.
+
+The hypothesis is already strong: `check_prompt_logic` with an NL interface at
+$9–15/month. But it's still a hypothesis until someone uses it and says
+"I need this every day." Validate that first, then charge.
+
+### Plug and play — who it works for today
+
+| User | Plug and play today? | Blocker |
+|---|---|---|
+| Developer | Yes — `pip install`, two commands | None |
+| Claude Desktop user | Yes — one JSON config block | MCP setup doc needed |
+| Non-technical user | No | NL layer + web UI not built yet |
+
+The gap between "plug and play for developers" and "plug and play for anyone"
+is two builds: the NL layer and the hosted web UI. Until then, it's a developer
+tool with a very clear path to becoming something broader.
+
+---
+
+## This is a legitimate v0.1 product
+
+Not a side project. Not a script. A v0.1 with:
+
+- Working engine with mathematical guarantees
+- CLI with REPL, multiple output formats, stdin support
+- 90 tests covering edge cases, integration, round-trips
+- MCP server with 5 tools Claude can call mid-conversation
+- pip-installable package with proper pyproject.toml
+- Product brief with positioning, pricing, competitive landscape
+- 47 use cases across 11 domains
+- Clear roadmap with two builds to a non-technical product
+
+### What's promotable today — to developers
+
+The MCP angle, the `check_prompt_logic` tool, and the pip package are a complete
+story for a technical audience right now. No URL needed. Channels:
+
+- **Show HN** — "I built a deterministic boolean logic verifier that plugs into Claude via MCP"
+- **r/ClaudeAI, r/LocalLLaMA** — MCP and LLM accuracy angle
+- **Anthropic Discord** — direct audience for MCP tools
+- **Twitter/X thread** — walk through `check_prompt_logic` with a real system prompt example
+
+### What unlocks the broader launch
+
+1. **NL layer** — "type a sentence, get an answer" replaces "write boolean notation"
+2. **Hosted web UI** — a URL anyone can open without installing anything
+
+With those two: Product Hunt, broader Reddit, general tech Twitter. Real launch.
+
+### Build in public
+
+Document the journey. What the engine found when tested against real system prompts.
+What surprised you. What the algorithm does that LLMs can't. People follow the builder
+before they follow the product — and this builder has a genuinely interesting story:
+a placement-season Java project turned into a deterministic AI reasoning tool.
+
+---
+
+## Full pipeline architecture — with CUDA and Redis
+
+```
+Rule 1 sentence → parse call ─┐
+Rule 2 sentence → parse call ─┤→ variable map (Redis — persists across calls)
+Rule 3 sentence → parse call ─┘
+                               ↓
+                   expressions + shared variable map
+                               ↓
+                   engine evaluation ← CUDA here
+                   (2^n rows, each independent,
+                    each row = one GPU thread)
+                               ↓
+                   truth table + contradictions + conflicts
+                               ↓
+                   explain call → plain English summary
+```
+
+### Where Redis fits
+
+- **Variable map cache** — same concept appearing across sessions reuses the same letter, no re-assignment
+- **Truth table cache** — `A.B+!A.C` always produces the same result, skip recomputation on repeat expressions
+- **Parse result cache** — same sentence always maps to the same expression, skip the LLM call entirely
+- **Session state** — user refines rules over time in a multi-turn conversation, variable map persists between turns
+
+### Where CUDA fits
+
+The engine evaluates `2^n` rows. Each row is completely independent — no row needs
+the result of any other. That is a perfect CUDA workload:
+
+```
+CPU now:  loop over 2^n rows sequentially
+GPU:      2^n threads, each computes one row simultaneously
+```
+
+- 5 variables = 32 rows — CPU is fine
+- 20 variables = 1M rows — CPU starts to slow
+- 50+ variables (BNN layers) = 1T+ rows — CUDA is not optional
+
+### Why the architecture holds
+
+Every layer has one job:
+- Parse calls — LLM, async, cacheable via Redis
+- Engine evaluation — pure compute, parallelisable via CUDA
+- Explain call — LLM, async, cacheable via Redis
+- Variable map — Redis, shared state across calls and sessions
+
+`core/` having zero external dependencies from day one was the right call.
+CUDA slots in as a drop-in replacement for the Python evaluation loop.
+Redis wraps the outside as a cache layer.
+Neither touches the core logic.
+
+### The multi-call parse pipeline (correct design)
+
+Each rule is parsed in a separate call, but variable assignments are threaded through:
+
+```
+Rule 1 → parse(sentence, variable_map={})
+       → {expression: "A.B", variable_map: {"A": "credit score good", "B": "income verified"}}
+
+Rule 2 → parse(sentence, variable_map={"A": ..., "B": ...})
+       → {expression: "C", variable_map: {"A": ..., "B": ..., "C": "collateral exists"}}
+
+Rule 3 → parse(sentence, variable_map={"A": ..., "B": ..., "C": ...})
+       → {expression: "!A", variable_map: unchanged}
+```
+
+Each call is independent and single-responsibility.
+The variable map is an explicit artifact — inspectable, correctable, cacheable.
+The engine and explain calls are completely separate from parsing.
+
+---
+
+## Distribution channels
+
+| Channel | Audience | Angle | When |
+|---|---|---|---|
+| Show HN | Developers | MCP + deterministic LLM grounding | Now |
+| r/ClaudeAI | Claude users | MCP server, plug into Claude Desktop | Now |
+| r/LocalLLaMA | LLM builders | LLM accuracy, boolean hallucination | Now |
+| Anthropic Discord | Claude developers | MCP tool, grounded reasoning | Now |
+| Twitter/X thread | Developers | Real `check_prompt_logic` demo | Now |
+| r/MachineLearning | Researchers | BNN + formal verification angle | After NL layer |
+| r/netsec | Security engineers | Access control auditing | After NL layer |
+| Product Hunt | General tech | Full product launch with web UI | After web UI |
+| r/compsci | Students / educators | Truth table + K-map verification | Anytime |

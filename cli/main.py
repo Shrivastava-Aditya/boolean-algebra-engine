@@ -307,6 +307,103 @@ def _repl():
         console.print()
 
 
+def _make_provider(provider_name: str, api_key: Optional[str], model: Optional[str], base_url: Optional[str]):
+    from nl.nl import AnthropicProvider, OpenAIProvider, OllamaProvider, OpenAICompatProvider
+    if provider_name == "anthropic":
+        return AnthropicProvider(api_key=api_key, model=model or "claude-sonnet-4-6")
+    if provider_name == "openai":
+        return OpenAIProvider(api_key=api_key, model=model or "gpt-4o")
+    if provider_name == "ollama":
+        return OllamaProvider(model=model or "llama3", base_url=base_url or "http://localhost:11434")
+    if provider_name == "compat":
+        if not base_url or not model:
+            err_console.print("[red]Error:[/red] --base-url and --model required for compat provider")
+            raise typer.Exit(1)
+        return OpenAICompatProvider(api_key=api_key or "", base_url=base_url, model=model)
+    err_console.print(f"[red]Error:[/red] Unknown provider '{provider_name}'. Choose: anthropic, openai, ollama, compat")
+    raise typer.Exit(1)
+
+
+@app.command("ask")
+def nl_ask(
+    sentence: str = typer.Argument(..., help="Plain English logical statement."),
+    provider: str = typer.Option("anthropic", "--provider", "-p", help="LLM provider: anthropic, openai, ollama, compat"),
+    api_key: Optional[str] = typer.Option(None, "--api-key", help="API key for the provider."),
+    model: Optional[str] = typer.Option(None, "--model", help="Model ID override."),
+    base_url: Optional[str] = typer.Option(None, "--base-url", help="Base URL for compat provider."),
+    format: Format = typer.Option(Format.table, "--format", "-f"),
+):
+    """Convert a plain English rule into a verified boolean result."""
+    try:
+        from nl.nl import ask
+        prov = _make_provider(provider, api_key, model, base_url)
+        result = ask(sentence, provider=prov)
+    except ImportError as e:
+        err_console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+    except Exception as e:
+        err_console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+
+    if format == Format.json:
+        print(json.dumps({
+            "input": result.input_sentence,
+            "expression": result.expression,
+            "variables": result.variables,
+            "minimal": result.minimal,
+            "satisfiable": result.satisfiable,
+            "tautology": result.tautology,
+            "contradiction": result.contradiction,
+            "minterms": result.minterms,
+            "explanation": result.explanation,
+        }, indent=2))
+        return
+
+    console.print(f"\n  [dim]Input    :[/dim] {result.input_sentence}")
+    console.print(f"  [dim]Parsed as:[/dim] [cyan]{result.expression}[/cyan]")
+    console.print(f"\n  [bold]Variables:[/bold]")
+    for var, meaning in result.variables.items():
+        console.print(f"    [yellow]{var}[/yellow] = {meaning}")
+
+    t = Table(box=box.SIMPLE_HEAVY, show_header=True, header_style="bold cyan")
+    for var in sorted(result.variables.keys()):
+        t.add_column(var, justify="center", style="dim")
+    t.add_column(result.expression, justify="center", style="bold")
+    for row in result.rows:
+        values = [str(row[v]) for v in sorted(result.variables.keys())]
+        output = "[green]1[/green]" if row["output"] == 1 else "[red]0[/red]"
+        t.add_row(*values, output)
+    console.print(t)
+
+    console.print(f"  Minimal    : [bold yellow]{result.minimal}[/bold yellow]")
+    console.print(f"  Satisfiable: {'[green]Yes[/green]' if result.satisfiable else '[red]No[/red]'}")
+    console.print(f"  Tautology  : {'[green]Yes[/green]' if result.tautology else '[red]No[/red]'}")
+    console.print(f"\n  [bold]Explanation:[/bold]\n  {result.explanation}\n")
+
+
+@app.command("check-rules")
+def nl_check_rules(
+    rules: list[str] = typer.Argument(..., help="Plain English rules to check."),
+    provider: str = typer.Option("anthropic", "--provider", "-p", help="LLM provider: anthropic, openai, ollama, compat"),
+    api_key: Optional[str] = typer.Option(None, "--api-key", help="API key for the provider."),
+    model: Optional[str] = typer.Option(None, "--model", help="Model ID override."),
+    base_url: Optional[str] = typer.Option(None, "--base-url", help="Base URL for compat provider."),
+):
+    """Check a list of plain English rules for contradictions and conflicts."""
+    try:
+        from nl.nl import check_rules
+        prov = _make_provider(provider, api_key, model, base_url)
+        result = check_rules(rules, provider=prov)
+    except ImportError as e:
+        err_console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+    except Exception as e:
+        err_console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+
+    print(json.dumps(result, indent=2))
+
+
 if __name__ == "__main__":
     if len(sys.argv) == 1 and sys.stdin.isatty():
         _repl()

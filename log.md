@@ -228,6 +228,25 @@ Added `test_integration.py` and `test_edge_cases.py`:
 
 ---
 
+### Prompt: "yes write this into PRODUCT.md and DESIGN.md and write an API plan first"
+- Added full pipeline architecture (Redis + CUDA) to PRODUCT.md and DESIGN.md
+- Added multi-call parse pipeline design with threaded variable maps
+- Added REST API plan to DESIGN.md — 7 endpoints, caching strategy, auth, deployment
+- Built `api/routes.py` — FastAPI, all 7 endpoints, Redis cache, auth middleware, graceful degradation
+- All endpoints smoke tested: evaluate, simplify, equivalent, satisfiable, check-rules, health
+- Cache degrades gracefully when Redis not available
+- Updated pyproject.toml: api, api-cache, dev extras
+
+### Prompt: "can we use other Models as well (NL layer)"
+- Rebuilt `nl/nl.py` with provider abstraction — `Provider` ABC, one `complete()` method
+- Four built-in providers: `AnthropicProvider`, `OpenAIProvider`, `OllamaProvider`, `OpenAICompatProvider`
+- Ollama runs fully locally — no API key, no cost
+- OpenAICompatProvider covers Groq, Together AI, LM Studio, vLLM, any OpenAI-compatible endpoint
+- CLI updated: `--provider`, `--model`, `--base-url` flags on `ask` and `check-rules` commands
+- Adding a new model = one class, one method, nothing else changes
+
+---
+
 ## Current State
 
 - Repo: `boolean-algebra-engine-python` (private)
