@@ -144,6 +144,13 @@ Created branch `python-rewrite` off `api-refactor`. Python rewrite will happen h
 
 ---
 
+### Prompt: "Yes do that and document"
+Added `test_integration.py` and `test_edge_cases.py`:
+- Integration: full pipeline round-trips, De Morgan, distribution, absorption, consensus theorem
+- Edge cases: single variable, synthesizer on 0/1/single/all-but-one minterms, nested parens, 4-5 variable stress, all operators together, operator precedence, all invalid input paths
+- Fixed absorption test — variable context mismatch (`A+A.B` vs `A` use different variable sets)
+- 90/90 passing
+
 ### Prompt: "Tests obviously"
 - Wrote 48 tests across `test_models.py`, `test_parser.py`, `test_evaluator.py`, `test_synthesizer.py`
 - Covers: truth table properties, validation, prefix conversion, De Morgan's laws, distribution law, round-trip synthesis, minimization (`A.B+A.!B` → `A`)
