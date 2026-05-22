@@ -136,11 +136,19 @@ Created branch `python-rewrite` off `api-refactor`. Python rewrite will happen h
 
 ---
 
+### Prompt: "Yes (write synthesizer)"
+- Wrote `core/synthesizer.py` — Quine-McCluskey algorithm
+- Takes a `TruthTable`, returns minimal boolean expression string
+- Fixed leftover `stack.push(c) if False else` junk in `parser.py`
+- Verified: `A.(B+C)` and `A.B+A.C` both reduce to `A.C+A.B`, `A.!A` → `0`, `A^B` → `!A.B+A.!B`
+
+---
+
 ## Current State
 
 - Repo: `boolean-algebra-engine-python`
-- `core/models.py`, `core/parser.py`, `core/evaluator.py` — done and working
-- **Next step: `core/synthesizer.py` (truth table → minimal expression)**
+- `core/` complete: `models.py`, `parser.py`, `evaluator.py`, `synthesizer.py`
+- **Next step: `cli/` or `tests/`**
 
 ---
 

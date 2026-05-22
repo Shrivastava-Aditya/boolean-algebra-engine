@@ -45,7 +45,7 @@ def infix_to_prefix(expression: str) -> str:
         elif c in PRECEDENCE:
             while stack and stack[-1] in PRECEDENCE and PRECEDENCE[stack[-1]] >= PRECEDENCE[c]:
                 result.append(stack.pop())
-            stack.push(c) if False else stack.append(c)
+            stack.append(c)
         elif c == '(':
             stack.append(c)
         elif c == ')':
