@@ -204,6 +204,28 @@ Added `test_integration.py` and `test_edge_cases.py`:
 - Updated milestones table to reflect current done/planned state
 - Key insight: engine is a deterministic verifier for LLM boolean reasoning, and maps onto Binary Neural Networks directly
 
+### Prompt: "Can you expose a port on VM and publish an index.html describing this project over there?"
+- Opened port 8080 via `firewall-cmd`
+- Wrote full dark-themed commercial landing page at `index.html` (~600 lines, pure HTML/CSS/JS)
+- Sections: hero with pipeline diagram, stats, forward/inverse code examples, CLI terminal demo, operator table, 20 use cases across 6 categories, deep learning connections, ASCII architecture diagram, 10-milestone roadmap with status tags, footer
+- Started Python HTTP server on port 8080 (background process)
+- Live at: `http://80.225.206.105:8080`
+
+---
+
+### Prompt: "Yes please (build MCP server)"
+- Installed Python 3.11 via dnf (MCP SDK requires >=3.10, VM was on 3.9)
+- Installed `mcp[cli]` 1.27.1 under python3.11
+- Wrote `mcp_server/server.py` with 5 tools:
+  - `evaluate` — expression → full truth table + metrics
+  - `simplify` — expression → minimal SOP form
+  - `equivalent` — two expressions → same truth table?
+  - `satisfiable` — expression → any row outputs 1?
+  - `check_prompt_logic` — list of rules → contradictions, tautologies, pairwise conflict/equivalence analysis
+- All 5 tools smoke tested and verified correct
+- Added `mcp = ["mcp[cli]>=1.0.0"]` to `pyproject.toml` optional dependencies
+- Run with: `python3.11 -m mcp_server.server`
+
 ---
 
 ## Current State
@@ -212,7 +234,9 @@ Added `test_integration.py` and `test_edge_cases.py`:
 - `core/` — done and documented
 - `tests/` — 90 tests, all passing
 - `cli/` — done, REPL + one-shot, all formats
-- **Next: notebook integration, then MCP/API when ready**
+- `mcp_server/` — done, 5 tools, runs on Python 3.11
+- `index.html` — commercial landing page (server off)
+- **Next: wire MCP into Claude Desktop / Claude Code, then NL layer**
 
 ---
 

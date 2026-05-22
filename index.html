@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Boolean Algebra Engine</title>
+  <style>
+    :root {
+      --bg:        #0d1117;
+      --bg2:       #161b22;
+      --bg3:       #1c2128;
+      --border:    #30363d;
+      --cyan:      #58a6ff;
+      --green:     #3fb950;
+      --yellow:    #d29922;
+      --purple:    #bc8cff;
+      --red:       #f85149;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --radius:    10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.7;
+    }
+
+    /* NAV */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(13,17,23,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 60px;
+    }
+    .nav-logo { font-weight: 700; font-size: 1rem; color: var(--cyan); letter-spacing: -.3px; }
+    .nav-logo span { color: var(--text); }
+    .nav-links { display: flex; gap: 1.8rem; list-style: none; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: .88rem; transition: color .2s; }
+    .nav-links a:hover { color: var(--text); }
+
+    /* HERO */
+    .hero {
+      text-align: center;
+      padding: 120px 2rem 80px;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(88,166,255,.12);
+      border: 1px solid rgba(88,166,255,.3);
+      color: var(--cyan);
+      font-size: .78rem;
+      padding: .3rem .9rem;
+      border-radius: 20px;
+      margin-bottom: 1.5rem;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+    h1 {
+      font-size: clamp(2.2rem, 5vw, 3.6rem);
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+    }
+    h1 .accent { color: var(--cyan); }
+    .hero-sub {
+      font-size: 1.15rem;
+      color: var(--muted);
+      max-width: 600px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.8;
+    }
+    .hero-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: .5rem;
+      padding: .7rem 1.6rem;
+      border-radius: var(--radius);
+      font-size: .9rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all .2s;
+      cursor: pointer; border: none;
+    }
+    .btn-primary { background: var(--cyan); color: #0d1117; }
+    .btn-primary:hover { background: #79b8ff; }
+    .btn-secondary { background: var(--bg2); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { border-color: var(--cyan); color: var(--cyan); }
+
+    /* PIPELINE */
+    .pipeline {
+      display: flex; align-items: center; justify-content: center;
+      flex-wrap: wrap; gap: .5rem;
+      margin: 3rem auto;
+      max-width: 700px;
+    }
+    .pipe-step {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: .6rem 1.2rem;
+      font-size: .85rem;
+      text-align: center;
+    }
+    .pipe-step .label { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .5px; display: block; }
+    .pipe-step .val { color: var(--cyan); font-family: monospace; font-weight: 600; }
+    .pipe-arrow { color: var(--muted); font-size: 1.2rem; }
+
+    /* SECTION */
+    section { padding: 80px 2rem; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .section-label {
+      font-size: .78rem; text-transform: uppercase; letter-spacing: 1px;
+      color: var(--cyan); margin-bottom: .6rem;
+    }
+    h2 { font-size: 2rem; font-weight: 700; letter-spacing: -.5px; margin-bottom: .8rem; }
+    h3 { font-size: 1.15rem; font-weight: 600; margin-bottom: .5rem; }
+    .section-sub { color: var(--muted); max-width: 540px; margin-bottom: 3rem; font-size: .95rem; }
+
+    /* STATS */
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 4rem; }
+    .stat {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.4rem;
+      text-align: center;
+    }
+    .stat-num { font-size: 2rem; font-weight: 800; color: var(--cyan); }
+    .stat-label { font-size: .8rem; color: var(--muted); margin-top: .2rem; }
+
+    /* CODE BLOCK */
+    .code-block {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden; margin: 1.5rem 0;
+    }
+    .code-header {
+      padding: .6rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .78rem; color: var(--muted);
+    }
+    .code-dots { display: flex; gap: .35rem; }
+    .code-dots span {
+      width: 11px; height: 11px; border-radius: 50%;
+    }
+    .dot-r { background: #f85149; }
+    .dot-y { background: #d29922; }
+    .dot-g { background: #3fb950; }
+    pre {
+      padding: 1.2rem 1.4rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: .83rem;
+      line-height: 1.7;
+      overflow-x: auto;
+      color: var(--text);
+    }
+    .kw { color: var(--purple); }
+    .fn { color: var(--cyan); }
+    .st { color: var(--green); }
+    .cm { color: var(--muted); font-style: italic; }
+    .num { color: var(--yellow); }
+    .op { color: var(--red); }
+
+    /* GRID CARDS */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+    .card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.4rem;
+      transition: border-color .2s;
+    }
+    .card:hover { border-color: var(--cyan); }
+    .card-icon { font-size: 1.5rem; margin-bottom: .8rem; }
+    .card p { color: var(--muted); font-size: .88rem; line-height: 1.6; }
+
+    /* USE CASES */
+    .usecase-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; }
+    .usecase-group {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.5rem;
+    }
+    .usecase-group h3 { color: var(--cyan); margin-bottom: 1rem; font-size: 1rem; }
+    .usecase-group ul { list-style: none; }
+    .usecase-group li {
+      padding: .4rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: .87rem;
+      color: var(--muted);
+      display: flex; gap: .6rem;
+    }
+    .usecase-group li:last-child { border-bottom: none; }
+    .usecase-group li::before { content: "→"; color: var(--green); flex-shrink: 0; }
+
+    /* ARCHITECTURE */
+    .arch {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 2rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: .82rem; line-height: 2;
+      overflow-x: auto;
+    }
+    .arch-done { color: var(--green); }
+    .arch-next { color: var(--yellow); }
+    .arch-plan { color: var(--muted); }
+    .arch-label { color: var(--cyan); font-weight: 700; }
+
+    /* OPERATOR TABLE */
+    table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+    th { text-align: left; padding: .7rem 1rem; border-bottom: 2px solid var(--border); font-size: .82rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+    td { padding: .7rem 1rem; border-bottom: 1px solid var(--border); font-size: .9rem; }
+    td code { background: var(--bg3); padding: .15rem .5rem; border-radius: 4px; font-family: monospace; color: var(--cyan); }
+    tr:last-child td { border-bottom: none; }
+
+    /* ROADMAP */
+    .roadmap { display: flex; flex-direction: column; gap: .6rem; }
+    .rm-item {
+      display: flex; align-items: center; gap: 1rem;
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: .9rem 1.2rem;
+      font-size: .88rem;
+    }
+    .rm-num { color: var(--muted); font-size: .78rem; min-width: 24px; }
+    .rm-title { flex: 1; }
+    .tag {
+      font-size: .72rem; padding: .2rem .6rem; border-radius: 10px;
+      font-weight: 600; text-transform: uppercase; letter-spacing: .4px;
+    }
+    .tag-done { background: rgba(63,185,80,.15); color: var(--green); border: 1px solid rgba(63,185,80,.3); }
+    .tag-next { background: rgba(210,153,34,.15); color: var(--yellow); border: 1px solid rgba(210,153,34,.3); }
+    .tag-plan { background: rgba(139,148,158,.1); color: var(--muted); border: 1px solid var(--border); }
+
+    /* DL SECTION */
+    .dl-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+    .dl-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.4rem;
+      border-left: 3px solid var(--purple);
+    }
+    .dl-card h3 { color: var(--purple); margin-bottom: .5rem; }
+    .dl-card p { color: var(--muted); font-size: .87rem; }
+
+    /* DIVIDER */
+    hr { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+    /* FOOTER */
+    footer {
+      text-align: center; padding: 3rem 2rem;
+      color: var(--muted); font-size: .85rem;
+      border-top: 1px solid var(--border);
+    }
+    footer a { color: var(--cyan); text-decoration: none; }
+
+    /* TERMINAL DEMO */
+    .terminal {
+      background: #010409; border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+      margin: 2rem 0;
+    }
+    .terminal-bar {
+      background: var(--bg2); padding: .6rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .terminal-title { font-size: .78rem; color: var(--muted); flex: 1; text-align: center; }
+    .terminal pre {
+      padding: 1.2rem 1.4rem;
+      color: var(--text);
+      font-size: .82rem;
+    }
+    .t-prompt { color: var(--cyan); }
+    .t-cmd { color: var(--green); }
+    .t-out { color: var(--text); }
+    .t-muted { color: var(--muted); }
+    .t-hi { color: var(--yellow); font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">bool<span>calc</span></div>
+  <ul class="nav-links">
+    <li><a href="#what">What</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#usecases">Use Cases</a></li>
+    <li><a href="#deeplearning">Deep Learning</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="badge">Boolean Algebra Engine · v0.1.0-alpha</div>
+  <h1>
+    A deterministic logic verifier<br/>
+    for <span class="accent">developers, educators,</span><br/>
+    and <span class="accent">AI systems</span>
+  </h1>
+  <p class="hero-sub">
+    Evaluates boolean expressions against truth tables. Synthesizes minimal forms
+    using Quine-McCluskey. Grounds LLM reasoning with exact computation.
+    Built for CUDA acceleration and neuro-symbolic AI.
+  </p>
+  <div class="hero-buttons">
+    <a href="#what" class="btn btn-primary">See How It Works</a>
+    <a href="#usecases" class="btn btn-secondary">View Use Cases</a>
+  </div>
+
+  <div class="pipeline">
+    <div class="pipe-step"><span class="label">Input</span><span class="val">"A.(B+C)"</span></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><span class="label">Evaluate</span><span class="val">truth table</span></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><span class="label">Synthesize</span><span class="val">A.C+A.B</span></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><span class="label">Metrics</span><span class="val">0.21ms · 2.3kb</span></div>
+  </div>
+</div>
+
+<hr/>
+
+<!-- WHAT -->
+<section id="what">
+  <div class="container">
+    <div class="section-label">What it does</div>
+    <h2>Two operations. Exact answers.</h2>
+    <p class="section-sub">No approximation, no confidence scores. Every result is deterministic and verifiable.</p>
+
+    <div class="stats">
+      <div class="stat"><div class="stat-num">90</div><div class="stat-label">Tests passing</div></div>
+      <div class="stat"><div class="stat-num">26</div><div class="stat-label">Max variables (A–Z)</div></div>
+      <div class="stat"><div class="stat-num">4</div><div class="stat-label">Output formats</div></div>
+      <div class="stat"><div class="stat-num">0ms</div><div class="stat-label">Overhead for contradictions</div></div>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">→</div>
+        <h3>Forward — evaluate()</h3>
+        <p>Takes a boolean expression string. Returns the full truth table, minterms, maxterms, satisfiability, tautology flag, and performance metrics.</p>
+        <div class="code-block">
+          <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>Python</div>
+          <pre><span class="kw">from</span> core.evaluator <span class="kw">import</span> evaluate
+
+table, metrics <span class="op">=</span> <span class="fn">evaluate</span>(<span class="st">"A.(B+C)"</span>)
+<span class="fn">print</span>(table.minterms)      <span class="cm"># [5, 6, 7]</span>
+<span class="fn">print</span>(table.satisfiable)   <span class="cm"># True</span>
+<span class="fn">print</span>(metrics.eval_time_ms) <span class="cm"># 0.21</span></pre>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon">←</div>
+        <h3>Inverse — synthesize()</h3>
+        <p>Takes a truth table. Returns the minimal boolean expression using Quine-McCluskey. Two equivalent expressions always reduce to the same minimal form.</p>
+        <div class="code-block">
+          <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>Python</div>
+          <pre><span class="kw">from</span> core.synthesizer <span class="kw">import</span> synthesize
+
+expr, metrics <span class="op">=</span> <span class="fn">synthesize</span>(table)
+<span class="fn">print</span>(expr)   <span class="cm"># "A.C+A.B"</span>
+
+<span class="cm"># A.B+A.!B always reduces to A</span>
+t, _ <span class="op">=</span> <span class="fn">evaluate</span>(<span class="st">"A.B+A.!B"</span>)
+<span class="fn">print</span>(<span class="fn">synthesize</span>(t)[<span class="num">0</span>])   <span class="cm"># "A"</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr/>
+
+<!-- CLI DEMO -->
+<section id="features">
+  <div class="container">
+    <div class="section-label">CLI &amp; REPL</div>
+    <h2>Works the way you think.</h2>
+    <p class="section-sub">One-shot commands for scripting. Interactive REPL for exploration. Pipe-friendly JSON output for notebooks and automation.</p>
+
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <div class="terminal-title">boolcalc — interactive REPL</div>
+      </div>
+      <pre>
+<span class="t-muted">Boolean Algebra Engine  —  boolcalc
+A deterministic boolean algebra engine...
+
+Operators:  ! NOT  · AND  ^ XOR  + OR</span>
+
+<span class="t-prompt">boolcalc></span> <span class="t-cmd">A.(B+C) -s --metrics</span>
+
+  A   B   C   A.(B+C)
+ ━━━━━━━━━━━━━━━━━━━━━
+  0   0   0      <span class="t-muted">0</span>
+  0   0   1      <span class="t-muted">0</span>
+  0   1   0      <span class="t-muted">0</span>
+  0   1   1      <span class="t-muted">0</span>
+  1   0   0      <span class="t-muted">0</span>
+  1   0   1      <span class="t-hi">1</span>
+  1   1   0      <span class="t-hi">1</span>
+  1   1   1      <span class="t-hi">1</span>
+
+  Variables  : A, B, C        Rows: 8
+  Satisfiable: Yes             Tautology: No
+  Minimal    : <span class="t-hi">A.C+A.B</span>
+
+  Eval  : 0.21ms  |  2380 bytes
+  Synth : 0.34ms  |  6452 bytes  |  2 prime implicants
+
+<span class="t-prompt">boolcalc></span> <span class="t-cmd">A.!A --satisfiable</span>
+<span class="t-muted">[exit code 1 — contradiction]</span>
+
+<span class="t-prompt">boolcalc></span> <span class="t-cmd">A+B --format json</span>
+<span class="t-muted">{ "expression": "A+B", "minterms": [1,2,3], "satisfiable": true ... }</span>
+</pre>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">📋</div>
+        <h3>Four output formats</h3>
+        <p><code style="color:var(--cyan)">table</code> — rich terminal output<br/>
+        <code style="color:var(--cyan)">json</code> — for scripting and notebooks<br/>
+        <code style="color:var(--cyan)">csv</code> — for data pipelines<br/>
+        <code style="color:var(--cyan)">minimal</code> — output column only</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <h3>Scriptable exit codes</h3>
+        <p><code style="color:var(--cyan)">--satisfiable</code> exits 0 or 1 with no output — compose with shell scripts, CI checks, and automated verification pipelines.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <h3>Performance metrics built in</h3>
+        <p>Every call returns eval time, synth time, peak memory, rows evaluated, and prime implicant count — your baseline before CUDA optimisation.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔌</div>
+        <h3>Stdin piping</h3>
+        <p><code style="color:var(--cyan)">echo "A^B" | boolcalc --format json</code> — fully composable with pipes, xargs, and shell scripting workflows.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr/>
+
+<!-- OPERATORS -->
+<section>
+  <div class="container">
+    <div class="section-label">Reference</div>
+    <h2>Operator table</h2>
+    <p class="section-sub">Variables must be uppercase letters A–Z. Parentheses override precedence.</p>
+    <table>
+      <tr><th>Symbol</th><th>Operation</th><th>Precedence</th><th>Example</th></tr>
+      <tr><td><code>!</code></td><td>NOT (unary)</td><td>4 — highest</td><td><code>!A</code></td></tr>
+      <tr><td><code>.</code></td><td>AND</td><td>3</td><td><code>A.B</code></td></tr>
+      <tr><td><code>^</code></td><td>XOR</td><td>2</td><td><code>A^B</code></td></tr>
+      <tr><td><code>+</code></td><td>OR</td><td>1 — lowest</td><td><code>A+B</code></td></tr>
+    </table>
+  </div>
+</section>
+
+<hr/>
+
+<!-- USE CASES -->
+<section id="usecases">
+  <div class="container">
+    <div class="section-label">Use cases</div>
+    <h2>Built for more than truth tables.</h2>
+    <p class="section-sub">Twenty concrete applications across six domains.</p>
+
+    <div class="usecase-grid">
+      <div class="usecase-group">
+        <h3>🛠 Developer Tooling</h3>
+        <ul>
+          <li>Verify access control expressions — find tautologies (always grants) or contradictions (never fires)</li>
+          <li>Check logical equivalence of two conditions without running code</li>
+          <li>Audit boolean guard clauses for redundant or dead branches</li>
+        </ul>
+      </div>
+      <div class="usecase-group">
+        <h3>🎓 Education</h3>
+        <ul>
+          <li>Instant truth table generation for digital logic coursework</li>
+          <li>Verify hand-solved Karnaugh map answers against Quine-McCluskey</li>
+          <li>Teach De Morgan, distribution, absorption interactively in the REPL</li>
+        </ul>
+      </div>
+      <div class="usecase-group">
+        <h3>⚙️ Digital &amp; Hardware Design</h3>
+        <ul>
+          <li>Minimize gate expressions before HDL (VHDL/Verilog) implementation</li>
+          <li>Verify combinational circuit output columns against spec</li>
+          <li>Synthesize and minimize Binary Neural Network layers</li>
+        </ul>
+      </div>
+      <div class="usecase-group">
+        <h3>🤖 AI / LLM Accuracy</h3>
+        <ul>
+          <li>Ground LLM boolean reasoning with exact computation via MCP</li>
+          <li>Deterministic verifier — eliminates hallucination on logic problems</li>
+          <li>Neuro-symbolic bridge — discrete verifier for hybrid AI systems</li>
+        </ul>
+      </div>
+      <div class="usecase-group">
+        <h3>🧠 Deep Learning</h3>
+        <ul>
+          <li>Find the exact boolean function a Binary Neural Network approximates</li>
+          <li>Formal verification of BNN safety properties via SAT checking</li>
+          <li>Feature interaction analysis — minimal expression for model activation</li>
+          <li>Logic-based constraint specification for network training</li>
+        </ul>
+      </div>
+      <div class="usecase-group">
+        <h3>📦 Packaging &amp; Integration</h3>
+        <ul>
+          <li>pip-installable library — embed evaluate() in any Python project</li>
+          <li>REST API — cloud-deployable, callable from any language</li>
+          <li>Jupyter notebooks — interactive boolean exploration and teaching</li>
+          <li>MCP tool — Claude uses it mid-conversation to verify reasoning</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr/>
+
+<!-- DEEP LEARNING -->
+<section id="deeplearning">
+  <div class="container">
+    <div class="section-label">Deep Learning</div>
+    <h2>Boolean algebra meets neural networks.</h2>
+    <p class="section-sub">Every neuron is a soft threshold gate. This engine computes the crisp version — and that connection runs deeper than it looks.</p>
+
+    <div class="dl-grid">
+      <div class="dl-card">
+        <h3>Neural Networks as Boolean Circuits</h3>
+        <p>A Binary Neural Network with ±1 weights is mathematically equivalent to a boolean circuit. evaluate() and synthesize() apply directly — find the exact logic function a BNN layer computes, not an approximation.</p>
+      </div>
+      <div class="dl-card">
+        <h3>Formal Verification</h3>
+        <p>For binary and quantized networks, proving a safety property holds for all inputs reduces to boolean satisfiability. The engine's SAT check is the primitive operation for neural network formal verification.</p>
+      </div>
+      <div class="dl-card">
+        <h3>Interpretability</h3>
+        <p>Given binary input features, find the minimal boolean expression describing when a model fires. Quine-McCluskey gives you the simplest human-readable rule — a concrete interpretability tool.</p>
+      </div>
+      <div class="dl-card">
+        <h3>CUDA Acceleration Path</h3>
+        <p>Truth table rows are fully independent — each maps 1:1 to a GPU thread. rows_evaluated is literally the thread count. GPU-accelerated boolean evaluation is the native compute primitive for large BNN layers.</p>
+      </div>
+    </div>
+
+    <div class="code-block" style="margin-top:2rem">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>Neuro-symbolic loop</div>
+      <pre><span class="cm"># The architecture that makes AI reliable in safety-critical contexts</span>
+
+LLM handles language, context, reasoning   <span class="cm">← prediction</span>
+        ↓
+calls engine via MCP                        <span class="cm">← tool call</span>
+        ↓
+engine returns ground truth                 <span class="cm">← deterministic</span>
+        ↓
+LLM response is now verified, not predicted <span class="cm">← reliable</span>
+
+<span class="cm"># "probably correct" is not acceptable in circuit design,</span>
+<span class="cm"># access control, or formal verification.</span>
+<span class="cm"># This engine is the deterministic half of that system.</span></pre>
+    </div>
+  </div>
+</section>
+
+<hr/>
+
+<!-- ARCHITECTURE -->
+<section id="architecture">
+  <div class="container">
+    <div class="section-label">Architecture</div>
+    <h2>Every layer is independently deployable.</h2>
+    <p class="section-sub">core/ has zero knowledge of anything outside itself. Every other layer is a thin wrapper. Swap, remove, or add layers without touching the engine.</p>
+
+    <div class="arch">
+<span class="arch-label">Natural Language Input</span>  <span class="arch-plan">← Claude API (planned)</span>
+        ↓
+<span class="arch-label">MCP Server</span>              <span class="arch-plan">← exposes core as Claude tools (planned)</span>
+        ↓
+<span class="arch-label">REST API</span>               <span class="arch-plan">← FastAPI, cloud deployable (planned)</span>
+        ↓
+<span class="arch-label">CLI / REPL</span>             <span class="arch-done">← boolcalc — done ✓</span>
+        ↓
+┌─────────────────────────────────────────────┐
+│           <span class="arch-label">core/</span>   <span class="arch-done">← done ✓</span>                    │
+│                                             │
+│  <span class="arch-done">parser.py</span>      validate · infix→prefix      │
+│  <span class="arch-done">evaluator.py</span>   evaluate() → TruthTable       │
+│  <span class="arch-done">synthesizer.py</span> synthesize() → minimal expr    │
+│  <span class="arch-done">models.py</span>      TruthTable · PerformanceMetrics│
+└─────────────────────────────────────────────┘
+        ↓
+<span class="arch-label">CUDA Layer</span>             <span class="arch-plan">← parallel row evaluation (planned)</span>
+<span class="arch-label">Cache Layer</span>            <span class="arch-plan">← expression memoization (planned)</span>
+    </div>
+  </div>
+</section>
+
+<hr/>
+
+<!-- ROADMAP -->
+<section id="roadmap">
+  <div class="container">
+    <div class="section-label">Roadmap</div>
+    <h2>Where this is going.</h2>
+    <p class="section-sub">Foundation is solid. Each layer above it adds a new deployment surface.</p>
+
+    <div class="roadmap">
+      <div class="rm-item"><span class="rm-num">0</span><span class="rm-title">Java origin — placement-era prototype, bugs fixed and documented</span><span class="tag tag-done">Done</span></div>
+      <div class="rm-item"><span class="rm-num">1</span><span class="rm-title">Python core — parser, evaluator, synthesizer (Quine-McCluskey), models</span><span class="tag tag-done">Done</span></div>
+      <div class="rm-item"><span class="rm-num">2</span><span class="rm-title">Test suite — 90 tests: unit, integration, edge cases, Boolean law verification</span><span class="tag tag-done">Done</span></div>
+      <div class="rm-item"><span class="rm-num">3</span><span class="rm-title">CLI &amp; REPL — boolcalc, four output formats, REPL with instruction manual</span><span class="tag tag-done">Done</span></div>
+      <div class="rm-item"><span class="rm-num">4</span><span class="rm-title">MCP server — expose evaluate, synthesize, equivalent, satisfiable as Claude tools</span><span class="tag tag-next">Next</span></div>
+      <div class="rm-item"><span class="rm-num">5</span><span class="rm-title">REST API — FastAPI, JSON responses, cloud deployable (AWS Lambda / GCP)</span><span class="tag tag-plan">Planned</span></div>
+      <div class="rm-item"><span class="rm-num">6</span><span class="rm-title">Web UI — interactive demo on top of REST API, Streamlit or React</span><span class="tag tag-plan">Planned</span></div>
+      <div class="rm-item"><span class="rm-num">7</span><span class="rm-title">Claude API NL layer — natural language → expression → truth table → explanation</span><span class="tag tag-plan">Planned</span></div>
+      <div class="rm-item"><span class="rm-num">8</span><span class="rm-title">CUDA acceleration — parallel truth table evaluation, one thread per row</span><span class="tag tag-plan">Planned</span></div>
+      <div class="rm-item"><span class="rm-num">9</span><span class="rm-title">Expression caching — memoize prime implicants and repeated sub-expressions</span><span class="tag tag-plan">Planned</span></div>
+      <div class="rm-item"><span class="rm-num">10</span><span class="rm-title">Demo notebook — interactive Jupyter walkthrough of the full pipeline</span><span class="tag tag-plan">Planned</span></div>
+    </div>
+  </div>
+</section>
+
+<hr/>
+
+<!-- FOOTER -->
+<footer>
+  <p style="margin-bottom:.5rem">
+    <strong style="color:var(--text)">Boolean Algebra Engine</strong> &nbsp;·&nbsp;
+    Built by <a href="https://github.com/Shrivastava-Aditya">Aditya Shrivastava</a>
+  </p>
+  <p>Licensed under GPL-3.0. Commercial licensing available.</p>
+  <p style="margin-top:1rem;font-size:.78rem;color:#484f58">
+    Forked from <a href="https://github.com/Shrivastava-Aditya/boolean-algebra-java">boolean-algebra-java</a> — the placement-era prototype this grew out of.
+  </p>
+</footer>
+
+</body>
+</html>

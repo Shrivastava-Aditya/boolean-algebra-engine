@@ -212,6 +212,63 @@ Variables: uppercase letters `A`–`Z`. Auto-detected from expression.
 
 ---
 
+## Market Position
+
+### What exists
+| Tool | What it does | Why it's not this |
+|---|---|---|
+| `sympy.logic` | Truth tables, simplification, SAT | Academic, no MCP, no NL layer, not LLM-native |
+| Z3 / SAT4J / Alloy | Formal verification, extremely powerful | Built for researchers, steep learning curve, no conversational interface |
+| Online truth table generators | Web toys | No API, no synthesis, no MCP |
+
+### What doesn't exist
+- An MCP-native boolean engine an LLM can call mid-conversation to verify its own reasoning
+- A `check_prompt_logic` tool — "paste your system prompt rules, get back contradictions" as a usable product
+- A full NL → boolean expression → verification → plain English pipeline, packaged for developers
+
+### The gap
+The raw computation exists in academia. The **product** doesn't.
+
+Z3 can do everything this engine does and more — but almost nobody ships Z3 to a non-specialist. The competition isn't Z3. The competition is "the developer manually reads their if-conditions and hopes for the best."
+
+### The moat
+Not the algorithm. The three things that don't exist together anywhere:
+1. **MCP integration** — Claude calls the engine instead of predicting logic
+2. **NL layer** — non-specialists describe rules in plain English, engine verifies them
+3. **Packaging** — pip-installable, embeddable, REST-deployable, notebook-ready
+
+### The core insight
+Boolean logic is one domain where "probably correct" is unacceptable. This engine is deterministic — same expression always produces the same truth table, no approximation, no hallucination. It hands LLMs a ground-truth anchor for the one class of reasoning they reliably get wrong.
+
+### Credibility — how it's verified
+
+The engine's credibility comes from **exhaustive enumeration**. It does not sample, approximate, or predict — it evaluates every single possible input combination. For `n` variables it produces exactly `2^n` rows, each computed independently by a stack evaluator running the actual operators.
+
+**What that means in practice:**
+- **Satisfiable** — an actual row where output = 1 was found, not inferred
+- **Contradiction** — every row was checked, all were 0
+- **Equivalent** — output columns compared row-by-row across the full truth table
+- **Conflict** — conjunction of both rules evaluated for every input, always returned 0
+
+**The honest limitation:** scales as `2^n`. Tractable up to ~20 variables (1M rows). At 30+ variables, SAT solvers (Z3, DPLL/CDCL) are the right tool — they avoid evaluating every row. For the prompt logic use case, where rules typically have 5–15 boolean variables, exhaustive enumeration is not just credible — it's **provably complete**. No edge case is missed.
+
+**Auditable by design:** the core evaluator is 15 lines (`core/evaluator.py:_evaluate_prefix`). If the operators are implemented correctly, the results are correct. No black box, no model weights, no probability — just arithmetic.
+
+This is a stronger correctness claim than any probabilistic tool can make.
+
+---
+
+### The $5 product
+`check_prompt_logic` — paste a list of rules from a system prompt, get back:
+- Which rules are contradictions (always false)
+- Which rules are tautologies (always true, i.e. redundant)
+- Which pairs always conflict (can never both be satisfied)
+- Which pairs are equivalent (duplicate rules)
+
+Every serious AI deployment has this problem. Nobody has the tooling for it.
+
+---
+
 ## Milestones
 
 | # | Milestone | Status |
@@ -220,7 +277,7 @@ Variables: uppercase letters `A`–`Z`. Auto-detected from expression.
 | 1 | Python rewrite — `core/` only | Done |
 | 2 | Tests — 90 tests across all core modules | Done |
 | 3 | CLI — REPL + one-shot, all output formats | Done |
-| 4 | MCP server | Planned |
+| 4 | MCP server | Done |
 | 5 | REST API (FastAPI) | Planned |
 | 6 | Web UI (Streamlit or React on FastAPI) | Planned |
 | 7 | Claude API NL layer | Planned |
