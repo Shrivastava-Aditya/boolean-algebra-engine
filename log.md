@@ -144,6 +144,9 @@ Created branch `python-rewrite` off `api-refactor`. Python rewrite will happen h
 
 ---
 
+### Prompt: "Include machine time and memory calculator as output"
+Added `PerformanceMetrics` dataclass to `models.py` — captures `eval_time_ms`, `synth_time_ms`, `peak_memory_bytes`, `rows_evaluated`, `prime_implicant_count`. Both `evaluate()` and `synthesize()` now return `(result, PerformanceMetrics)` tuples. Updated all 90 tests to unpack tuples. Baseline numbers visible now — CUDA and caching improvements will be measurable against them.
+
 ### Prompt: "Yes, of course, before we build it deeply"
 Added `pyproject.toml` — package name `boolean-algebra-engine`, GPL-3.0, Python 3.9+, optional deps `cli` (typer+rich) and `dev` (pytest), `boolcalc` entry point wired to `cli.main:app`. Installs cleanly with `pip install -e ".[dev]"`, 90/90 tests still passing.
 

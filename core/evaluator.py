@@ -1,5 +1,7 @@
 from __future__ import annotations
-from .models import TruthTable, TruthTableRow
+import time
+import tracemalloc
+from .models import TruthTable, TruthTableRow, PerformanceMetrics
 from .parser import get_variables, validate, infix_to_prefix
 
 
@@ -21,7 +23,7 @@ def _evaluate_prefix(prefix: str, variable_values: dict[str, int]) -> int:
     return stack[0]
 
 
-def evaluate(expression: str) -> TruthTable:
+def evaluate(expression: str) -> tuple[TruthTable, PerformanceMetrics]:
     error = validate(expression)
     if error:
         raise ValueError(error)
@@ -29,8 +31,11 @@ def evaluate(expression: str) -> TruthTable:
     variables = get_variables(expression)
     prefix = infix_to_prefix(expression)
     n = len(variables)
-    rows = []
 
+    tracemalloc.start()
+    t_start = time.perf_counter()
+
+    rows = []
     for i in range(2 ** n):
         values = {
             var: (i >> (n - 1 - j)) & 1
@@ -39,4 +44,14 @@ def evaluate(expression: str) -> TruthTable:
         output = _evaluate_prefix(prefix, values)
         rows.append(TruthTableRow(inputs=values, output=output))
 
-    return TruthTable(expression=expression, variables=variables, rows=rows)
+    eval_time_ms = (time.perf_counter() - t_start) * 1000
+    _, peak = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+
+    table = TruthTable(expression=expression, variables=variables, rows=rows)
+    metrics = PerformanceMetrics(
+        eval_time_ms=round(eval_time_ms, 4),
+        peak_memory_bytes=peak,
+        rows_evaluated=2 ** n,
+    )
+    return table, metrics

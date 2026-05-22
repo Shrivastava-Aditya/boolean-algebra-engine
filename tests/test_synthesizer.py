@@ -16,9 +16,9 @@ from core.synthesizer import synthesize
 
 def _round_trip(expression: str) -> bool:
     """Evaluate an expression, synthesize minimal form, verify logical equivalence."""
-    original = evaluate(expression)
-    minimal = synthesize(original)
-    rebuilt = evaluate(minimal) if minimal not in ('0', '1') else None
+    original = evaluate(expression)[0]
+    minimal = synthesize(original)[0]
+    rebuilt = evaluate(minimal)[0] if minimal not in ('0', '1') else None
 
     if minimal == '0':
         return original.minterms == []
@@ -31,13 +31,13 @@ def _round_trip(expression: str) -> bool:
 
 def test_contradiction_returns_zero():
     """Unsatisfiable expressions synthesize to the literal string '0'."""
-    t = evaluate('A.!A')
-    assert synthesize(t) == '0'
+    t = evaluate('A.!A')[0]
+    assert synthesize(t)[0] == '0'
 
 def test_tautology_returns_one():
     """Tautologies synthesize to the literal string '1'."""
-    t = evaluate('A+!A')
-    assert synthesize(t) == '1'
+    t = evaluate('A+!A')[0]
+    assert synthesize(t)[0] == '1'
 
 
 # --- Round-trip correctness ---
@@ -71,11 +71,11 @@ def test_three_variable_expression():
 
 def test_equivalent_expressions_same_minimal():
     """Logically equivalent expressions produce the same minimal form."""
-    t1 = evaluate('A.(B+C)')
-    t2 = evaluate('A.B+A.C')
-    assert synthesize(t1) == synthesize(t2)
+    t1 = evaluate('A.(B+C)')[0]
+    t2 = evaluate('A.B+A.C')[0]
+    assert synthesize(t1)[0] == synthesize(t2)[0]
 
 def test_minimal_form_is_simpler_or_equal():
     """A.B+A.!B reduces to A — adjacent minterms merge into a single term."""
-    t = evaluate('A.B+A.!B')
-    assert synthesize(t) == 'A'
+    t = evaluate('A.B+A.!B')[0]
+    assert synthesize(t)[0] == 'A'

@@ -1,5 +1,7 @@
 from __future__ import annotations
-from .models import TruthTable
+import time
+import tracemalloc
+from .models import TruthTable, PerformanceMetrics
 
 
 def _can_merge(a: str, b: str) -> tuple[bool, str]:
@@ -62,15 +64,25 @@ def _pi_to_expr(pi: str, variables: list[str]) -> str:
     return '.'.join(terms) if terms else '1'
 
 
-def synthesize(truth_table: TruthTable) -> str:
+def synthesize(truth_table: TruthTable) -> tuple[str, PerformanceMetrics]:
     minterms = truth_table.minterms
     variables = truth_table.variables
     n = len(variables)
 
+    tracemalloc.start()
+    t_start = time.perf_counter()
+
     if not minterms:
-        return '0'
+        synth_time_ms = (time.perf_counter() - t_start) * 1000
+        _, peak = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+        return '0', PerformanceMetrics(synth_time_ms=round(synth_time_ms, 4), peak_memory_bytes=peak, prime_implicant_count=0)
+
     if len(minterms) == 2 ** n:
-        return '1'
+        synth_time_ms = (time.perf_counter() - t_start) * 1000
+        _, peak = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+        return '1', PerformanceMetrics(synth_time_ms=round(synth_time_ms, 4), peak_memory_bytes=peak, prime_implicant_count=0)
 
     current: dict[str, set[int]] = {format(m, f'0{n}b'): {m} for m in minterms}
     prime_implicants: list[str] = []
@@ -101,4 +113,15 @@ def synthesize(truth_table: TruthTable) -> str:
         current = next_round
 
     selected = _minimum_cover(prime_implicants, minterms, n)
-    return '+'.join(_pi_to_expr(pi, variables) for pi in selected)
+    expr = '+'.join(_pi_to_expr(pi, variables) for pi in selected)
+
+    synth_time_ms = (time.perf_counter() - t_start) * 1000
+    _, peak = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+
+    metrics = PerformanceMetrics(
+        synth_time_ms=round(synth_time_ms, 4),
+        peak_memory_bytes=peak,
+        prime_implicant_count=len(prime_implicants),
+    )
+    return expr, metrics

@@ -12,8 +12,8 @@ from core.synthesizer import synthesize
 
 def assert_equivalent(expr1: str, expr2: str):
     """Assert two expressions produce identical truth tables."""
-    t1 = evaluate(expr1)
-    t2 = evaluate(expr2)
+    t1 = evaluate(expr1)[0]
+    t2 = evaluate(expr2)[0]
     assert t1.minterms == t2.minterms, (
         f"'{expr1}' minterms={t1.minterms} != '{expr2}' minterms={t2.minterms}"
     )
@@ -21,15 +21,15 @@ def assert_equivalent(expr1: str, expr2: str):
 
 def round_trip(expression: str) -> str:
     """Evaluate an expression, synthesize a minimal form, return it."""
-    original = evaluate(expression)
-    minimal = synthesize(original)
+    original = evaluate(expression)[0]
+    minimal = synthesize(original)[0]
     return minimal
 
 
 def assert_round_trip(expression: str):
     """Synthesized expression must be logically equivalent to the original."""
-    original = evaluate(expression)
-    minimal = synthesize(original)
+    original = evaluate(expression)[0]
+    minimal = synthesize(original)[0]
 
     if minimal == '0':
         assert original.minterms == [], f"Expected unsatisfiable, got minterms={original.minterms}"
@@ -38,7 +38,7 @@ def assert_round_trip(expression: str):
         assert original.tautology, f"Expected tautology"
         return
 
-    rebuilt = evaluate(minimal)
+    rebuilt = evaluate(minimal)[0]
     assert original.minterms == rebuilt.minterms, (
         f"Round-trip failed for '{expression}': "
         f"original={original.minterms}, after synthesis '{minimal}'={rebuilt.minterms}"
@@ -103,18 +103,18 @@ def _double_not_supported():
 
 def test_synthesis_absorption():
     # A+A.B simplifies to A
-    t = evaluate('A+A.B')
-    minimal = synthesize(t)
+    t = evaluate('A+A.B')[0]
+    minimal = synthesize(t)[0]
     assert_equivalent(minimal, 'A')
 
 def test_synthesis_consensus():
     # A.B + !A.C + B.C simplifies to A.B+!A.C (consensus theorem)
-    t = evaluate('A.B+!A.C+B.C')
-    minimal = synthesize(t)
+    t = evaluate('A.B+!A.C+B.C')[0]
+    minimal = synthesize(t)[0]
     assert_equivalent(minimal, 'A.B+!A.C')
 
 def test_synthesis_xor_expanded():
     # A.!B+!A.B is XOR — minimal should be equivalent
-    t = evaluate('A.!B+!A.B')
-    minimal = synthesize(t)
+    t = evaluate('A.!B+!A.B')[0]
+    minimal = synthesize(t)[0]
     assert_equivalent(minimal, 'A^B')
