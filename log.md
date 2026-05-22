@@ -144,6 +144,18 @@ Created branch `python-rewrite` off `api-refactor`. Python rewrite will happen h
 
 ---
 
+### Prompt: "Yes build a CLI then I will integrate it in pynb"
+Built `cli/main.py` using typer + rich. Commands:
+- `boolcalc "expr"` — rich truth table to terminal
+- `--format json/csv/minimal` — structured output for scripting/notebooks
+- `--synthesize` — print minimal expression
+- `--minterms / --maxterms` — print index lists
+- `--satisfiable / --tautology` — exit-code only, no output (scriptable)
+- `--metrics` — show timing and memory
+- `--output file` — write to file
+- stdin support: `echo "A+B" | boolcalc`
+All formats tested and working.
+
 ### Prompt: "And document and update log if we haven't"
 Added module and function docstrings to all four core modules:
 - `models.py` — module docstring, class/property docstrings for all three dataclasses
