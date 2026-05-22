@@ -321,6 +321,19 @@ Added `test_integration.py` and `test_edge_cases.py`:
 - Installed matplotlib + numpy under python3.11
 - Live at http://80.225.206.105:8080
 
+### Prompt: "update PRODUCT.md with everything we just figured out"
+Major repositioning. The product is not a library with wrappers — it is a logic layer
+for AI agents and models. Key findings:
+- What it is: inference-time logical consistency verifier, sits between AI reasoning and output
+- The claim: reduces logical hallucination by x% (measurable, reproducible, your pipeline)
+- The latency advantage: <10ms runtime overhead vs 500-3000ms for self-critique/constitutional AI
+- The gap: no existing tool makes this specific claim — inference-time, measurable, agent-native, plain English
+- Logical hallucination (caught) vs factual hallucination (not caught) — precise, defensible claim
+- Three deployment positions: agent pipelines, system prompt validation, LLM output verification
+Updated: What it is, Where it sits, Hallucination reduction section, Latency section,
+What doesn't exist (reframed), Moat (reframed around position not algorithm),
+How it can be used (logic layer framing)
+
 ### Prompt: "we dont really need to use the UI this way / but update the product md"
 - Updated PRODUCT.md stack table — all layers now marked built
 - Added "The visualisation layer" section — describes heatmap and conflict matrix as demo tools
