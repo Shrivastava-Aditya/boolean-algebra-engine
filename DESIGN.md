@@ -163,6 +163,42 @@ Natural language → expression via Claude API, then expression → truth table 
 
 ---
 
+## Use Cases
+
+### Developer Tooling
+1. **Condition verification** — paste a boolean guard clause from code, check if it's a tautology (always grants), contradiction (never fires), or has redundant branches
+2. **Logical equivalence checking** — verify two expressions are identical without running the code
+3. **Access control auditing** — model permission logic as boolean expressions, find conditions that always allow or always deny access
+
+### Education
+4. **Truth table generation** — instant truth tables for digital logic and discrete math coursework
+5. **Karnaugh map verification** — check hand-solved K-map answers against Quine-McCluskey output
+6. **Boolean law demonstration** — teach De Morgan, distribution, absorption interactively in the REPL
+
+### Digital / Hardware Design
+7. **Gate expression minimization** — reduce logic before HDL (VHDL/Verilog) implementation
+8. **Combinational circuit verification** — confirm a circuit expression produces the intended output column
+9. **BNN layer mapping** — Binary Neural Networks use `+1/-1` weights, which map directly to boolean circuits; synthesize and minimize BNN layers
+
+### AI / LLM Accuracy
+10. **Tool-augmented reasoning** — via MCP, LLMs verify their boolean reasoning against ground truth instead of predicting it; eliminates hallucination on logic problems
+11. **Deterministic verifier** — boolean logic is one domain where "probably correct" is unacceptable; the engine provides exact answers the LLM can anchor to
+12. **Neuro-symbolic bridge** — sits at the discrete computation end; as neuro-symbolic AI matures, deterministic boolean verifiers become critical primitives
+
+### Deep Learning
+13. **Neural network as boolean circuit** — every neuron is a soft threshold gate; find the exact boolean function a trained binary network approximates
+14. **BNN formal verification** — for binary/quantized networks, safety property verification is literally boolean satisfiability; the engine handles the SAT check
+15. **Feature interaction analysis** — find the minimal boolean expression describing when a model fires over binary features; interpretability tool
+16. **Logic-based constraints** — encode boolean rules as specifications; verify a network satisfies them by evaluating against truth tables
+17. **CUDA acceleration target** — truth table rows are independent, map 1:1 to GPU threads; GPU-accelerated boolean evaluation is the compute primitive for large BNN layers
+
+### Packaging / Integration
+18. **pip-installable library** — `evaluate()` and `synthesize()` as clean Python functions, embeddable in any project
+19. **REST API** — cloud-deployable via FastAPI, callable from any language
+20. **Jupyter notebooks** — interactive boolean exploration, visualise truth tables, demo layer for teaching
+
+---
+
 ## Operator Reference
 
 | Symbol | Operation | Precedence |
@@ -181,10 +217,13 @@ Variables: uppercase letters `A`–`Z`. Auto-detected from expression.
 | # | Milestone | Status |
 |---|---|---|
 | 0 | Fix Java bugs, document, branch | Done |
-| 1 | Python rewrite — `core/` only | Next |
-| 2 | CLI wrapper | — |
-| 3 | MCP server | — |
-| 4 | REST API (FastAPI) | — |
-| 5 | Claude API NL layer | — |
-| 6 | Expression synthesis (Quine-McCluskey) | — |
-| 7 | Tests across all layers | — |
+| 1 | Python rewrite — `core/` only | Done |
+| 2 | Tests — 90 tests across all core modules | Done |
+| 3 | CLI — REPL + one-shot, all output formats | Done |
+| 4 | MCP server | Planned |
+| 5 | REST API (FastAPI) | Planned |
+| 6 | Web UI (Streamlit or React on FastAPI) | Planned |
+| 7 | Claude API NL layer | Planned |
+| 8 | CUDA acceleration for truth table evaluation | Planned |
+| 9 | Expression caching layer | Planned |
+| 10 | Demo notebook (`demo.ipynb`) | Planned |

@@ -198,12 +198,21 @@ Added `test_integration.py` and `test_edge_cases.py`:
 
 ---
 
+### Prompt: "Yes write use cases and make repo private"
+- Repo set to private via `gh repo edit --visibility private`
+- Added 20 use cases to `DESIGN.md` across 6 categories: developer tooling, education, digital/hardware design, AI/LLM accuracy, deep learning, packaging/integration
+- Updated milestones table to reflect current done/planned state
+- Key insight: engine is a deterministic verifier for LLM boolean reasoning, and maps onto Binary Neural Networks directly
+
+---
+
 ## Current State
 
-- Repo: `boolean-algebra-engine-python`
-- `core/` complete and tested: `models.py`, `parser.py`, `evaluator.py`, `synthesizer.py`
-- `tests/` complete: 48 tests, all passing
-- **Next step: `cli/`**
+- Repo: `boolean-algebra-engine-python` (private)
+- `core/` — done and documented
+- `tests/` — 90 tests, all passing
+- `cli/` — done, REPL + one-shot, all formats
+- **Next: notebook integration, then MCP/API when ready**
 
 ---
 
@@ -214,5 +223,6 @@ Added `test_integration.py` and `test_edge_cases.py`:
 | Python over Java | Ecosystem, conciseness, Claude API SDK |
 | Fork Java, don't delete | Preserve original, good reference |
 | `core/` has zero I/O | Independently testable, wrappable by anything |
+| Repo private for now | Commercialisation in progress — dual license model |
 | MCP before REST API | More immediately useful for AI use case |
 | Auto-detect variables | Removes friction from current manual `--vars` |
