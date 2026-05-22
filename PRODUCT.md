@@ -466,24 +466,30 @@ The engine itself has no AI in it. That's the point. That's why it's credible.
 
 ## Pricing model
 
-The cost to serve is near zero — no GPU, no inference, just CPU arithmetic.
-That changes the pricing logic entirely. You're not charging per token.
-You're charging for access to a workflow.
+Infrastructure is priced on usage and scale — not per seat.
+The value scales with the pipeline, not with the user count.
 
 | Tier | Who | Price | What |
 |---|---|---|---|
-| **Free** | Devs, students | $0 | CLI, pip install, unlimited local use |
-| **Pro** | Prompt engineers, solo builders | $9–15/month | Hosted API, NL interface, `check_prompt_logic` UI |
-| **Team** | Companies shipping LLM products | $49–99/month | Higher rate limits, audit logs, team access |
+| **Free** | Devs, open source | $0 | pip install, MCP, CLI, unlimited local use — drives adoption |
+| **Startup** | Teams shipping 1–2 agents | $99–199/month | Hosted logic layer, NL interface, call limits, dashboard |
+| **Scale** | Multiple agent pipelines | $499–999/month | Higher limits, audit logs, SLA, team access |
+| **Enterprise** | Large AI deployments | Custom | Dedicated instance, compliance, on-prem, commercial license |
 
-**Why free at the bottom:** the engine is GPL-3.0 — anyone can run it locally.
-Charging for the CLI would kill adoption. The money is in the hosted product
-and the NL layer, neither of which is easy to self-host (needs Claude API keys,
-a frontend, and maintenance).
+**Why infrastructure pricing, not tool pricing:**
+A linter doesn't cost $5/month. A monitoring tool doesn't cost $5/month. Things that
+sit in the stack and run on every deployment are priced on usage and scale.
+The $9/month framing was right for "paste your prompt and check it."
+It is wrong for "logic layer in your production pipeline."
 
-**Dual license:** GPL-3.0 for open source use. Commercial license for anyone
-embedding it in a proprietary product. Standard model — Redis, MongoDB, Elasticsearch
-all did this. Open core keeps adoption high, commercial license captures enterprise value.
+**The honest value calculation:**
+If this catches one bad agent decision that costs a company $10,000 in customer damage
+or a compliance violation — and it will, for the teams that need it — the monthly fee
+is irrelevant. Enterprise teams will pay for the audit log alone.
+
+**Dual license:** GPL-3.0 for open source use. Commercial license for proprietary
+embedding. Standard model — Redis, MongoDB, Elasticsearch all did this.
+Open core drives adoption. Commercial license captures enterprise value.
 
 ---
 
@@ -891,16 +897,52 @@ The engine and explain calls are completely separate from parsing.
 
 ---
 
-## Distribution channels
+## Distribution strategy
+
+Infrastructure doesn't get adopted through launches. It gets adopted through the stack,
+one team at a time, starting with the people who feel the pain most directly.
+
+### Phase 1 — One real pipeline, find x%
+
+Not 100 users. One team. One production agent with real rules. Run the logic layer on
+their pipeline, find their x%, show them the number. That case study is worth more than
+any launch post.
+
+Target: an AI engineer who has already shipped an agent and suspects their logic has
+edge cases they haven't caught. They exist on Anthropic Discord, LangChain community,
+AI engineer Slack groups.
+
+Don't launch until you have the number.
+
+### Phase 2 — MCP distribution
+
+The MCP server is already built. One post in the right place — Anthropic Discord,
+the MCP tools thread — and developers install it themselves. They find their own
+contradictions. They share what they found.
+
+The viral loop: engine finds something real → person who found it tells someone →
+that person installs it → repeat.
+
+### Phase 3 — The number
+
+Once you have x% from a real pipeline, write it up. Not a blog post — a technical
+breakdown. What the pipeline was, what rules it had, what the engine found, what the
+cost would have been if it shipped. Post to Hacker News.
+
+That is the Show HN that has something nobody else has: a real number on a real system.
+
+### Phase 4 — Paid tier
+
+After the number has legs. Not before.
+
+### Channel map
 
 | Channel | Audience | Angle | When |
 |---|---|---|---|
-| Show HN | Developers | MCP + deterministic LLM grounding | Now |
-| r/ClaudeAI | Claude users | MCP server, plug into Claude Desktop | Now |
-| r/LocalLLaMA | LLM builders | LLM accuracy, boolean hallucination | Now |
-| Anthropic Discord | Claude developers | MCP tool, grounded reasoning | Now |
-| Twitter/X thread | Developers | Real `check_prompt_logic` demo | Now |
-| r/MachineLearning | Researchers | BNN + formal verification angle | After NL layer |
-| r/netsec | Security engineers | Access control auditing | After NL layer |
-| Product Hunt | General tech | Full product launch with web UI | After web UI |
-| r/compsci | Students / educators | Truth table + K-map verification | Anytime |
+| Anthropic Discord | Claude / MCP developers | Logic layer for agents, MCP native | Now |
+| AI engineer communities | Teams shipping agents | x% logical hallucination reduction | After x% |
+| Show HN | Developers | Real number, real pipeline, auditable | After x% |
+| r/ClaudeAI, r/LocalLLaMA | LLM builders | Agent-native logic verification | After x% |
+| Twitter/X | Developers | Technical breakdown with the number | After x% |
+| r/MachineLearning | Researchers | Formal verification for LLM outputs | After x% |
+| Product Hunt | General tech | Full product launch | After paid tier |
