@@ -294,6 +294,198 @@ absolutely is itself an absolute rule. `!Ab` and `U` cannot both be true.
 
 ---
 
+## CBT / Therapy — Client Logical Coherence
+
+These are statements a client might make in a therapy session.
+Each contains a hidden contradiction between what they believe about
+themselves and what they simultaneously claim. In CBT, surfacing
+these contradictions is the work. The engine makes them explicit.
+
+Note: this is not a replacement for a therapist. It is a tool that
+could assist a therapist in identifying patterns in what a client says —
+the same way a spellchecker assists a writer without replacing them.
+
+---
+
+### 15. The Worthiness Trap
+> "I know I am a good person deep down.
+> I do not deserve good things happening to me.
+> Good things only happen to good people."
+
+**Variables:**
+- `G` = I am a good person
+- `D` = I deserve good things
+- `H` = good things happen to me
+
+**Expressions:**
+- Claim 1: `G` (I am good)
+- Claim 2: `!D` (I don't deserve good things)
+- Claim 3: `G → D` (good person implies deserving good things)
+
+**Expected finding:** Claim 1 and Claim 3 together imply `D`.
+Claim 2 asserts `!D`. The client simultaneously believes they are good
+and that being good does not apply to them. Classic cognitive distortion —
+the rule applies to everyone except themselves.
+
+---
+
+### 16. The Control Paradox
+> "I cannot control anything that happens to me. Everything is out of my hands.
+> I am responsible for everything that goes wrong in my life.
+> If I had done things differently, none of this would have happened."
+
+**Variables:**
+- `C` = I have control over outcomes
+- `R` = I am responsible for what goes wrong
+
+**Expressions:**
+- Claim 1+2: `!C` (no control at all)
+- Claim 3+4: `R` (fully responsible — which requires control)
+
+**Expected finding:** `R` implies `C` — you cannot be responsible for
+outcomes you have zero control over. The client holds both simultaneously.
+Zero control and full responsibility. This is one of the most common
+contradictory belief patterns in depression and anxiety.
+
+---
+
+### 17. The Lovability Contradiction
+> "I am unlovable. No one could truly love me if they knew the real me.
+> I push people away before they can get close enough to find out.
+> I desperately want connection and to be loved."
+
+**Variables:**
+- `L` = I am lovable
+- `P` = I allow people to get close
+- `W` = I want to be loved
+
+**Expressions:**
+- Claim 1+2: `!L` (unlovable, always)
+- Claim 3: `!P` (push people away — prevents love from being tested)
+- Claim 4: `W` (wants love — requires belief that `L` is possible)
+
+**Expected finding:** `W` — genuinely wanting love — implies some belief
+that love is possible, which requires `L`. But Claim 1 asserts `!L`.
+The client acts to prevent the very thing they want, and believes they
+want something they simultaneously believe is impossible for them.
+
+---
+
+### 18. The Perfectionism Loop
+> "If I cannot do something perfectly, there is no point doing it at all.
+> I never do anything perfectly.
+> I must keep trying because giving up is not an option."
+
+**Variables:**
+- `P` = I do something perfectly
+- `T` = there is a point in trying
+- `K` = I keep trying
+
+**Expressions:**
+- Claim 1: `!P → !T` (no perfection = no point)
+- Claim 2: `!P` (never perfect — always true)
+- Claim 3: `K` (must keep trying = there is a point)
+
+**Expected finding:** Claim 1 + Claim 2 together imply `!T` always.
+Claim 3 asserts `K`, which requires `T`. The client is locked in a loop —
+trying is pointless by their own rule, but they must keep trying.
+The rule makes all effort meaningless, yet effort continues.
+
+---
+
+### 19. The Burden Belief
+> "I am a burden to everyone around me.
+> Everyone would be better off without me.
+> The people in my life choose to stay because they care about me."
+
+**Variables:**
+- `B` = I am a burden to others
+- `W` = others would be better off without me
+- `S` = people choose to stay because they care
+
+**Expressions:**
+- Claim 1: `B` (burden, always)
+- Claim 2: `W` (better off without me)
+- Claim 3: `S` (people stay because they care — contradicts `W`)
+
+**Expected finding:** If `W` is true — people would genuinely be better
+off without the client — then `S` (staying because they care) requires
+those people to act against their own wellbeing. Claim 3 implies `!W`.
+The client's belief that people care contradicts their belief that they
+are a burden. Both are held simultaneously.
+
+**Important note:** Statement 19 is a clinical risk pattern. In a real
+therapy context, surfacing this contradiction — "you believe people care
+AND you believe they'd be better off without you — both cannot be true" —
+is a meaningful therapeutic intervention.
+
+---
+
+### 20. The Anxiety Identity
+> "I am an anxious person. That is just who I am, it cannot change.
+> I want to feel calm and in control of my emotions.
+> I have felt calm before, in certain situations."
+
+**Variables:**
+- `A` = I am always anxious (fixed identity)
+- `C` = I can feel calm
+- `W` = I want to feel calm
+
+**Expressions:**
+- Claim 1: `A` (always anxious, unchangeable — implies `!C` always)
+- Claim 2: `W` (wants calm — implies belief `C` is possible)
+- Claim 3: `C` (has felt calm — directly contradicts `A`)
+
+**Expected finding:** Claim 3 is a direct counterexample to Claim 1.
+The client has already felt calm — which falsifies "I am always anxious."
+The belief is demonstrably false by their own testimony. The engine
+surfaces this: `A` and `C` cannot both be true, and the client just
+provided evidence for `C`.
+
+---
+
+### 21. The Self-Sabotage Split
+> "I want to be successful more than anything.
+> Every time I get close to success, something goes wrong.
+> I do not believe I deserve to be successful.
+> The things that go wrong are always external, never my fault."
+
+**Variables:**
+- `W` = I genuinely want success
+- `D` = I believe I deserve success
+- `F` = failures are caused by external factors (not me)
+- `S` = I sabotage my own success
+
+**Expressions:**
+- Claim 1: `W` (wants success)
+- Claim 3: `!D` (does not deserve it — in conflict with `W`)
+- Claim 4: `F` (external causes only — `!S`)
+- Pattern: `!D` often manifests as `S` — self-sabotage is the mechanism
+
+**Expected finding:** `W` and `!D` are in tension — wanting something
+you believe you don't deserve creates a drive to prevent it.
+`F` (external causes) and `S` (self-sabotage) are mutually exclusive —
+if the client is unconsciously sabotaging outcomes, the cause is internal.
+The statement holds three contradictions simultaneously.
+
+---
+
+### How a therapist could use this
+
+The engine does not diagnose or treat. It surfaces logical inconsistencies
+in what a client says. A therapist could:
+
+1. Transcribe or note the key belief statements a client makes in a session
+2. Run them through `check_prompt_logic` or the NL layer
+3. Get back which pairs conflict — mathematically, not subjectively
+4. Use that as a starting point: "You said X and you said Y — can both be true?"
+
+The engine makes implicit contradictions explicit. The therapeutic work
+of understanding why those contradictions exist, and helping the client
+resolve them, remains entirely human.
+
+---
+
 ## How to run these through the engine
 
 ```python
