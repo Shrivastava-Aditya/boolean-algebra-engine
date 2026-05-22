@@ -63,25 +63,23 @@ public class Logics {
             }
 
             else {
-                int[] o1 = st.peek();
-                st.pop();
-                int[] o2 = st.peek();
-                st.pop();
-
-                // Use switch case to operate on o1
-                // and o2 and perform o1 O o2.
                 char c = string.charAt(j);
-                switch (c) {
-                    case '+':
-                    case '.':
-                    case '^':
-                    case '!':
-                        st.push(operate(o1,o2,c));
-                        break;
-                    default:
-                        System.out.println("Invalid operator") ; break  ;
+                int[] o1 = st.pop();
+                if (c == '!') {
+                    st.push(operate(o1, o1, c));
+                } else {
+                    int[] o2 = st.pop();
+                    switch (c) {
+                        case '+':
+                        case '.':
+                        case '^':
+                            st.push(operate(o1, o2, c));
+                            break;
+                        default:
+                            System.out.println("Invalid operator"); break;
+                    }
                 }
-             }
+            }
 
         }
 

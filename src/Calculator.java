@@ -4,7 +4,7 @@ import java.util.Scanner;
 public class Calculator {
     int gates;
     String string;
-    int[] array = new int[(int)Math.pow(2,gates)];
+    int[] array;
 
     public Calculator(int gates, String string) {
         this.gates = gates;

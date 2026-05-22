@@ -8,21 +8,17 @@ public class StringParser {
         if(stringChecker(string)) {
             this.inputString = string;
             this.prefixString = new String(infixToPreFix(string));
-            this.arrOfChars = new String(infixToPreFix(string)).toCharArray();
+            this.arrOfChars = this.prefixString.toCharArray();
         }
         else
             System.out.println("Invalid String");
     }
     public static int precedence(char c){
         switch (c){
-            case '^':
-                return 2;
-            case '!':
-                return 1;
-            case '+':
-                return 4;
-            case '.':
-                return 3;
+            case '!': return 4;
+            case '.': return 3;
+            case '^': return 2;
+            case '+': return 1;
         }
         return -1;
     }
@@ -35,15 +31,8 @@ public class StringParser {
 
         char [] charsExp = new String(input).toCharArray();
         for (int i = 0; i < charsExp.length; i++) {
-
-            if (charsExp[i] == '(') {
-                charsExp[i] = ')';
-                i++;
-            }
-            else if (charsExp[i] == ')') {
-                charsExp[i] = '(';
-                i++;
-            }
+            if (charsExp[i] == '(') charsExp[i] = ')';
+            else if (charsExp[i] == ')') charsExp[i] = '(';
         }
         for (int i = 0; i <charsExp.length ; i++) {
             char c = charsExp[i];
@@ -68,7 +57,7 @@ public class StringParser {
             }
         }
 
-        for (int i = 0; i <=stack.size() ; i++) {
+        while (!stack.isEmpty()) {
             result.append(stack.pop());
         }
         return result.reverse();
