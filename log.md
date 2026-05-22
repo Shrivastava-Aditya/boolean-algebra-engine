@@ -144,6 +144,9 @@ Created branch `python-rewrite` off `api-refactor`. Python rewrite will happen h
 
 ---
 
+### Prompt: "Yes, of course, before we build it deeply"
+Added `pyproject.toml` — package name `boolean-algebra-engine`, GPL-3.0, Python 3.9+, optional deps `cli` (typer+rich) and `dev` (pytest), `boolcalc` entry point wired to `cli.main:app`. Installs cleanly with `pip install -e ".[dev]"`, 90/90 tests still passing.
+
 ### Prompt: "Can you update a readme.md"
 Rewrote README.md — covers what the engine does (forward + inverse), operators, project structure, quickstart, core usage examples, roadmap, and links to related repos.
 

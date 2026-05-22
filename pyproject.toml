@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "boolean-algebra-engine"
+version = "0.1.0"
+description = "Boolean algebra engine — evaluate expressions, generate truth tables, synthesize minimal forms"
+readme = "README.md"
+license = { text = "GPL-3.0-only" }
+requires-python = ">=3.9"
+authors = [
+    { name = "Aditya Shrivastava", email = "adityars.work@gmail.com" }
+]
+keywords = ["boolean", "algebra", "logic", "truth-table", "quine-mccluskey", "digital-logic"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.optional-dependencies]
+cli = ["typer>=0.12.0", "rich>=13.0.0"]
+dev = ["pytest>=8.0.0"]
+
+[project.scripts]
+boolcalc = "cli.main:app"
+
+[project.urls]
+Homepage = "https://github.com/Shrivastava-Aditya/boolean-algebra-engine-python"
+Repository = "https://github.com/Shrivastava-Aditya/boolean-algebra-engine-python"
+Issues = "https://github.com/Shrivastava-Aditya/boolean-algebra-engine-python/issues"
+
+[tool.setuptools.packages.find]
+include = ["core*", "cli*", "mcp_server*", "api*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
