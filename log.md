@@ -144,6 +144,9 @@ Created branch `python-rewrite` off `api-refactor`. Python rewrite will happen h
 
 ---
 
+### Prompt: "In REPL mode I would love a description and instruction manual too"
+Added REPL_BANNER (project description, what it does, operator table) shown on launch. Expanded REPL_HELP into a full instruction manual with commands, output formats, and examples with annotations. Banner shows once on start, manual shows on `help`/`h`/`?`.
+
 ### Prompt: "Is it not interactable like Claude Code"
 Added REPL mode to CLI — `python3 -m cli.main -i` or auto-launches when called with no args in a tty. Supports all same flags inline (e.g. `A+B --format json`), `help`, `exit`/`quit`/Ctrl+C. Fixed `@app.callback` conflict that was breaking one-shot mode.
 

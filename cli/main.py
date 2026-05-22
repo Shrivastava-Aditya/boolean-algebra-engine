@@ -221,19 +221,62 @@ def _print_rich_table(table, eval_metrics, synth_expr, synth_metrics,
             console.print(f"  [dim]Synth : {synth_metrics.synth_time_ms} ms  |  {synth_metrics.peak_memory_bytes} bytes  |  {synth_metrics.prime_implicant_count} prime implicants[/dim]")
 
 
-REPL_HELP = """
-[bold cyan]boolcalc REPL[/bold cyan] — type an expression to evaluate it.
+REPL_BANNER = """
+[bold cyan]╔══════════════════════════════════════════════════════╗
+║          Boolean Algebra Engine  —  boolcalc         ║
+╚══════════════════════════════════════════════════════╝[/bold cyan]
 
-  [yellow]A+B[/yellow]                        truth table
-  [yellow]A.(B+C) -s[/yellow]                 with minimal expression
-  [yellow]A.B+C --format json[/yellow]        JSON output
-  [yellow]A^B --metrics[/yellow]              with timing/memory
-  [yellow]A.!A --satisfiable[/yellow]         satisfiability check
-  [yellow]help[/yellow]                       show this message
-  [yellow]exit[/yellow] / [yellow]quit[/yellow] / Ctrl+C        exit
+[white]A boolean algebra engine that evaluates expressions against
+truth tables and synthesizes minimal forms using Quine-McCluskey.[/white]
+
+[bold]What it does:[/bold]
+  [green]Forward[/green]   expression  →  truth table
+  [green]Inverse[/green]   truth table →  minimal expression
+
+[bold]Operators:[/bold]
+  [yellow]![/yellow]   NOT   (highest precedence)
+  [yellow].[/yellow]   AND
+  [yellow]^[/yellow]   XOR
+  [yellow]+[/yellow]   OR    (lowest precedence)
+
+  Variables must be uppercase letters [cyan]A–Z[/cyan].
+  Parentheses override precedence as usual.
+"""
+
+REPL_HELP = """
+[bold cyan]── Commands ──────────────────────────────────────────────[/bold cyan]
+
+  [yellow]<expression>[/yellow]                   evaluate and show truth table
+  [yellow]<expression> -s[/yellow]                also show minimal expression
+  [yellow]<expression> --metrics[/yellow]         show timing and memory usage
+  [yellow]<expression> --minterms[/yellow]        show minterm indices
+  [yellow]<expression> --maxterms[/yellow]        show maxterm indices
+  [yellow]<expression> --satisfiable[/yellow]     check if satisfiable
+  [yellow]<expression> --tautology[/yellow]       check if tautology
+
+[bold cyan]── Output formats ────────────────────────────────────────[/bold cyan]
+
+  [yellow]<expression> --format table[/yellow]    rich table (default)
+  [yellow]<expression> --format json[/yellow]     JSON — good for scripting
+  [yellow]<expression> --format csv[/yellow]      CSV
+  [yellow]<expression> --format minimal[/yellow]  output column only
+
+[bold cyan]── Examples ──────────────────────────────────────────────[/bold cyan]
+
+  [dim]boolcalc>[/dim] [green]A+B[/green]
+  [dim]boolcalc>[/dim] [green]A.(B+C) -s --metrics[/green]
+  [dim]boolcalc>[/dim] [green]!(A.B) --format json[/green]
+  [dim]boolcalc>[/dim] [green]A.B+!A.C+B.C -s[/green]       [dim]← consensus theorem[/dim]
+  [dim]boolcalc>[/dim] [green]A.!A --satisfiable[/green]     [dim]← contradiction check[/dim]
+
+[bold cyan]── Session ───────────────────────────────────────────────[/bold cyan]
+
+  [yellow]help[/yellow]                           show this manual
+  [yellow]exit[/yellow] / [yellow]quit[/yellow] / [yellow]Ctrl+C[/yellow]           exit
 """
 
 def _repl():
+    console.print(REPL_BANNER)
     console.print(REPL_HELP)
     while True:
         try:
@@ -247,7 +290,7 @@ def _repl():
         if line.lower() in ("exit", "quit", "q"):
             console.print("[dim]bye[/dim]")
             break
-        if line.lower() in ("help", "?"):
+        if line.lower() in ("help", "?", "h"):
             console.print(REPL_HELP)
             continue
 
