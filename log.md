@@ -310,7 +310,20 @@ Added `test_integration.py` and `test_edge_cases.py`:
 - `DESIGN.md` — architecture diagram, 47 use cases, REST API plan, milestones
 - `statements.md` — 21 verifiable statements across 6 domains + 7 CBT patterns
 - `index.html` — commercial landing page
-- **Next: web UI → public launch**
+- `ui/app.py` — Streamlit UI, 3 modes, dark theme, matplotlib heatmap + conflict matrix
+- **Next: public launch prep**
+
+---
+
+### Prompt: "can we also show a matplotlib for something? if we are into demozone"
+- Added truth table heatmap to Expression mode — green/red grid, output column highlighted in gold
+- Added conflict matrix to Rule Auditor — N×N grid, red ✗ for conflicts, green ✓ for safe pairs
+- Installed matplotlib + numpy under python3.11
+- Live at http://80.225.206.105:8080
+
+### Prompt: "we dont really need to use the UI this way / but update the product md"
+- Updated PRODUCT.md stack table — all layers now marked built
+- Added "The visualisation layer" section — describes heatmap and conflict matrix as demo tools
 
 ---
 

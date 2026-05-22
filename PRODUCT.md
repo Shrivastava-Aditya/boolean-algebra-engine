@@ -286,13 +286,13 @@ system prompt caught before shipping is worth far more to the right team.
 ## Stack (current state)
 
 ```
-[ NL Layer ]          ← not built — Claude API, two calls
+[ NL Layer ]          ← built — 4 providers (Anthropic, OpenAI, Ollama, OpenAI-compat)
 [ MCP Server ]        ← built — 5 tools, runs on Python 3.11
+[ REST API ]          ← built — FastAPI, 7 endpoints, Redis cache, auth
+[ Streamlit UI ]      ← built — 3 modes, dark theme, matplotlib visualisations
 [ CLI / REPL ]        ← built — typer + rich, all output formats
 [ Core Engine ]       ← built — evaluate, synthesize, verify
 [ Tests ]             ← 90 tests, all passing
-[ REST API ]          ← not built — FastAPI, planned
-[ Web UI ]            ← not built — planned
 [ CUDA acceleration ] ← not built — rows are independent, map 1:1 to GPU threads
 ```
 
@@ -617,10 +617,37 @@ Not a side project. Not a script. A v0.1 with:
 - CLI with REPL, multiple output formats, stdin support
 - 90 tests covering edge cases, integration, round-trips
 - MCP server with 5 tools Claude can call mid-conversation
+- REST API — 7 endpoints, Redis cache, optional auth, graceful degradation
+- NL layer — 4 LLM providers, works fully offline with Ollama
+- Streamlit UI — 3 modes, dark theme, live matplotlib visualisations
 - pip-installable package with proper pyproject.toml
 - Product brief with positioning, pricing, competitive landscape
 - 47 use cases across 11 domains
 - Clear roadmap with two builds to a non-technical product
+
+## The visualisation layer
+
+The Streamlit UI generates two classes of charts automatically from the engine output.
+These are not decorative — they make findings that require careful reading of a table
+immediately obvious in one glance.
+
+**Truth table heatmap (Expression mode)**
+
+Every row of the truth table rendered as a green/red grid.
+Input columns are lighter; output column is distinctly highlighted.
+A contradiction is an entirely red output column. A tautology is entirely green.
+A pattern of minterms becomes visually obvious in a way a list of indices doesn't.
+
+**Conflict matrix (Rule Auditor)**
+
+N×N grid, one cell per rule pair.
+- Red `✗` — always conflict, cannot both fire
+- Green `✓` — no overlap, safe
+- Yellow `≡` — equivalent, duplicate rule
+
+With 4 rules and 3 conflicts: three red cells appear instantly in the matrix.
+No reading. No counting. The dangerous pairs are visible before the user finishes
+scrolling. This is what the demo looks like to a non-technical stakeholder.
 
 ### What's promotable today — to developers
 
