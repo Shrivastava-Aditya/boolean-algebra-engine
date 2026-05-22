@@ -144,6 +144,9 @@ Created branch `python-rewrite` off `api-refactor`. Python rewrite will happen h
 
 ---
 
+### Prompt: "Can you update a readme.md"
+Rewrote README.md — covers what the engine does (forward + inverse), operators, project structure, quickstart, core usage examples, roadmap, and links to related repos.
+
 ### Prompt: "Yes document test"
 Added module-level docstrings to all 5 test files explaining scope, approach,
 and what each group of tests covers. Added per-test docstrings explaining the
