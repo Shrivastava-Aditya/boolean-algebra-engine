@@ -120,6 +120,56 @@ reasoning in natural language.**
 That is every industry, every organisation, every AI system deployed today.
 The problem is not niche. The tooling to catch it has not existed — until now.
 
+### What else this statement plugs into
+
+The Linux/Mac example has a causal claim buried inside a correlation claim and
+they contradict. That structure — locally consistent, globally broken — appears
+across every domain that uses language to express logic.
+
+**Philosophy / logic education**
+Textbook example of correlation vs causation expressed as boolean rules.
+A logic course uses the engine to show students exactly where informal
+reasoning breaks down. The visual output makes it concrete — not "this is wrong"
+but "here is the exact row where it fails."
+
+**Debate and argument analysis**
+Any argument in natural language can be broken into boolean claims and checked
+for internal consistency. Political speeches, op-eds, legal arguments, debates —
+extract the if-then claims, plug them in, find the contradictions. The engine
+doesn't care about subject matter, only logical structure.
+
+**Therapy / cognitive behavioural tools**
+CBT is literally about finding contradictory beliefs a person holds simultaneously.
+"I need to be perfect to be loved" and "I know nobody is perfect" — boolean
+contradiction. The engine formalises what a therapist does manually.
+
+**Journalism / fact checking**
+A politician says: "We have always supported this policy. We changed our position
+because circumstances changed. Our position has never changed." Three sentences.
+Contradiction found in milliseconds. Fact checkers currently do this by reading
+transcripts manually.
+
+**AI alignment and safety**
+Language models are trained on human text — full of contradictions like this one.
+The engine can audit training data or model outputs for logical consistency.
+A primitive but real alignment tool — catching cases where a model has internalised
+contradictory beliefs.
+
+**Personal journaling / decision making**
+Someone writes about a decision they're struggling with. Extract the stated beliefs.
+Check for consistency. "I value my independence but I can't make decisions without
+approval" — contradiction surfaced, made visible, discussable.
+
+**HR and policy documents**
+Employee handbooks are full of this. "We have a flat hierarchy. All decisions go
+through the management chain. Every employee has an equal voice." Three sentences,
+at least two conflicting.
+
+The common thread: the Linux/Mac statement is not unusual. It is the norm.
+Human language is full of statements that sound locally consistent but are globally
+contradictory. The engine is a universal detector for that failure mode —
+regardless of domain.
+
 ---
 
 ## What it does today
