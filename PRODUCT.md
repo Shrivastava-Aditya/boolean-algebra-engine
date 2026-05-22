@@ -38,6 +38,90 @@ every codebase, every system prompt, every set of business rules ever written by
 
 ---
 
+## The scope — anywhere humans reason informally
+
+That pattern — statements that sound consistent individually but contradict each other
+when held together — is not rare. It is how natural language works. People don't speak
+in formal logic. They speak in approximations, and each approximation sounds fine on
+its own.
+
+### A real example
+
+> *"I have been using Linux since a little longer than 6 years now, but I have been
+> using Mac since close to 3 years. If I did not use Linux, I would have never switched
+> to Mac. But me using Mac has no relation with me using Linux in any way."*
+
+Four sentences. Each sounds reasonable. Read together:
+
+- Sentence 3 says: Linux **caused** the switch to Mac
+- Sentence 4 says: Linux and Mac are **completely unrelated**
+
+These cannot both be true. Statement 3 makes Mac dependent on Linux.
+Statement 4 says Mac is independent of Linux. Direct contradiction.
+
+In boolean terms:
+- `L` = using Linux, `M` = using Mac
+- Sentence 3: `!L → !M` (equivalent to: Mac requires Linux as prerequisite)
+- Sentence 4: `M` and `L` are independent
+
+The engine flags this as a conflicting pair. The person who said it wasn't lying
+or being careless — they just couldn't hold both conditions simultaneously while
+speaking each sentence. Nobody can. That's not a flaw to fix, it's a human
+limitation to work around.
+
+### Where this exact pattern appears everywhere
+
+**System prompts**
+> "Always be helpful to the user. Never discuss competitor products.
+>  If the user asks about pricing, always redirect to sales.
+>  Never make the user feel like they're being redirected."
+
+Four sentences. At least two conflict — you cannot always redirect and never
+make the user feel redirected simultaneously.
+
+**Legal contracts**
+> "The agreement is valid for 12 months. Either party may terminate with
+>  30 days notice. Termination requires mutual consent."
+
+Clause 2 and clause 3 contradict — unilateral notice vs mutual consent
+cannot both be the termination mechanism.
+
+**Business rules**
+> "Premium users get priority support. All users are treated equally.
+>  Premium users are served first."
+
+Sentence 1 and sentence 2 are incompatible by definition.
+
+**Medical guidelines**
+> "Administer drug A if symptom X is present. Do not administer drug A
+>  if the patient has condition Y. Patients with symptom X almost always
+>  have condition Y."
+
+The third sentence makes the first two mutually exclusive in most real cases.
+
+**Personal reasoning** — like the Linux/Mac example above
+> "I make all decisions independently. My mentor has heavily influenced
+>  my career choices."
+
+Two sentences. One direct contradiction.
+
+### The common thread
+
+Every single one of these was written by someone who believed they were
+being consistent. Each sentence was written in isolation, made sense in
+isolation, and was never checked against the others.
+
+That is not a human flaw. It is a human limitation.
+This engine is the workaround.
+
+**The scope: anywhere humans write rules, policies, instructions, or
+reasoning in natural language.**
+
+That is every industry, every organisation, every AI system deployed today.
+The problem is not niche. The tooling to catch it has not existed — until now.
+
+---
+
 ## What it does today
 
 **Forward:** Give it a boolean expression, it returns the full truth table — every possible
