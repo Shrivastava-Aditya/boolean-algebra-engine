@@ -247,15 +247,70 @@ Added `test_integration.py` and `test_edge_cases.py`:
 
 ---
 
+### Prompt: "take one complex example and deconstruct it for multiple use cases"
+- Chose cloud deployment gate scenario: `T.(A+H.O).W.!I` — 6 variables, 64 rows
+- Ran full truth table — 5 deploy-allowed rows out of 64
+- Minimal form: `H.!I.O.T.W + A.!I.T.W` — two clear deployment paths
+- Finding: incident flag (`I=1`) is absolute blocker with no exceptions
+- Finding: one-approver condition redundant when two approvers present
+- Explained in plain English — "the door analogy"
+- Eval: 3.7ms, synth: 0.8ms total
+
+### Prompt: "That linux statement, when plugged with this can also give output in matplotlib"
+- Confirmed: L=using Linux, M=using Mac, contradiction at L=0 M=1
+- Identified as the flagship demo — personal, relatable, visual
+- One red cell in the heatmap = the exact row where the statement breaks down
+
+### Prompt: "what other things can this statement plug into"
+- Identified 7 domains: philosophy/logic education, debate analysis, CBT,
+  journalism/fact-checking, AI alignment, personal journaling, HR policy
+- Written into PRODUCT.md under "What else this statement plugs into"
+
+### Prompt: "write one more section of CBT / therapy consultancy"
+- Added 7 CBT statements to `statements.md` (statements 15-21):
+  worthiness trap, control paradox, lovability contradiction,
+  perfectionism loop, burden belief, anxiety identity, self-sabotage split
+- Each has variables, boolean expressions, expected findings, clinical context
+- Statement 19 (burden belief) flagged as clinical risk pattern
+- Added therapist usage guide: transcribe beliefs → engine → conflicting pairs → intervention
+
+### Prompt: "write some statements that can be verifiable"
+- Created `statements.md` — 21 verifiable statements across 6 categories:
+  personal reasoning, system prompts, business policy, legal, medical, philosophical
+- Each has plain English statement, variable map, boolean expressions, expected finding
+- Three usage methods shown: NL layer, direct expressions, CLI
+
+### Prompt: "write a clear demo script"
+- Created `demo.py` — 514 lines, 10 sections, loan approval scenario
+- Created `DEMO_EXPLAINED.md` — 286 lines, plain English explanation of all 10 sections
+- Punchline: 6 rules, 4 people, 6 months, 2 compliance violations found in 4.5ms
+
+### Prompt: "give me an architecture of what we have"
+- Added full ASCII architecture diagram to `DESIGN.md`
+- Shows all 4 interface layers, NL layer, core engine modules, acceleration layer
+
+### Prompt: "can it be self-distributing"
+- Identified 3 self-distribution mechanisms: MCP ecosystem, pip package, viral demo
+- The compounding loop: find it → catch real bug → tell someone → repeat
+- One good public demo with a real finding seeds the loop
+
+---
+
 ## Current State
 
 - Repo: `boolean-algebra-engine-python` (private)
-- `core/` — done and documented
-- `tests/` — 90 tests, all passing
-- `cli/` — done, REPL + one-shot, all formats
-- `mcp_server/` — done, 5 tools, runs on Python 3.11
-- `index.html` — commercial landing page (server off)
-- **Next: wire MCP into Claude Desktop / Claude Code, then NL layer**
+- `core/` — done, documented, 90 tests passing
+- `cli/` — done, REPL + one-shot, all formats, NL commands
+- `mcp_server/` — done, 5 tools, Python 3.11
+- `api/` — done, 7 endpoints, Redis cache, auth, graceful degradation
+- `nl/` — done, 4 providers (Anthropic, OpenAI, Ollama, OpenAI-compat)
+- `demo.py` — end-to-end demo, 10 sections
+- `DEMO_EXPLAINED.md` — plain English walkthrough
+- `PRODUCT.md` — full product brief, scope, pricing, distribution, replicability
+- `DESIGN.md` — architecture diagram, 47 use cases, REST API plan, milestones
+- `statements.md` — 21 verifiable statements across 6 domains + 7 CBT patterns
+- `index.html` — commercial landing page
+- **Next: web UI → public launch**
 
 ---
 
@@ -269,3 +324,7 @@ Added `test_integration.py` and `test_edge_cases.py`:
 | Repo private for now | Commercialisation in progress — dual license model |
 | MCP before REST API | More immediately useful for AI use case |
 | Auto-detect variables | Removes friction from current manual `--vars` |
+| Provider abstraction in NL | Any LLM works — not locked to Anthropic |
+| Separate parse calls with threaded variable map | Each call single-responsibility, map is inspectable and cacheable |
+| GPL-3.0 core + commercial license | Open adoption, enterprise monetisation |
+| statements.md as playground | Real examples drive demos, marketing, and testing |
