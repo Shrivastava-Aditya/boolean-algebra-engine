@@ -144,6 +144,9 @@ Created branch `python-rewrite` off `api-refactor`. Python rewrite will happen h
 
 ---
 
+### Prompt: "Is it not interactable like Claude Code"
+Added REPL mode to CLI — `python3 -m cli.main -i` or auto-launches when called with no args in a tty. Supports all same flags inline (e.g. `A+B --format json`), `help`, `exit`/`quit`/Ctrl+C. Fixed `@app.callback` conflict that was breaking one-shot mode.
+
 ### Prompt: "Yes build a CLI then I will integrate it in pynb"
 Built `cli/main.py` using typer + rich. Commands:
 - `boolcalc "expr"` — rich truth table to terminal

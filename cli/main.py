@@ -2,7 +2,8 @@
 cli/main.py — boolcalc command-line interface.
 
 Usage:
-    boolcalc [OPTIONS] EXPRESSION
+    boolcalc [OPTIONS] EXPRESSION   one-shot mode
+    boolcalc                        interactive REPL mode
 
 Examples:
     boolcalc "A+B"
@@ -13,6 +14,7 @@ Examples:
 """
 from __future__ import annotations
 import json
+import shlex
 import sys
 from enum import Enum
 from typing import Optional
@@ -93,7 +95,17 @@ def main(
         "--metrics",
         help="Print performance metrics (time and memory).",
     ),
+    interactive: bool = typer.Option(
+        False,
+        "--interactive", "-i",
+        help="Launch interactive REPL mode.",
+    ),
 ):
+    # Launch REPL if requested
+    if interactive:
+        _repl()
+        return
+
     # Accept expression from stdin if not passed as argument
     expr = expression or _read_stdin()
     if not expr:
@@ -209,5 +221,51 @@ def _print_rich_table(table, eval_metrics, synth_expr, synth_metrics,
             console.print(f"  [dim]Synth : {synth_metrics.synth_time_ms} ms  |  {synth_metrics.peak_memory_bytes} bytes  |  {synth_metrics.prime_implicant_count} prime implicants[/dim]")
 
 
+REPL_HELP = """
+[bold cyan]boolcalc REPL[/bold cyan] — type an expression to evaluate it.
+
+  [yellow]A+B[/yellow]                        truth table
+  [yellow]A.(B+C) -s[/yellow]                 with minimal expression
+  [yellow]A.B+C --format json[/yellow]        JSON output
+  [yellow]A^B --metrics[/yellow]              with timing/memory
+  [yellow]A.!A --satisfiable[/yellow]         satisfiability check
+  [yellow]help[/yellow]                       show this message
+  [yellow]exit[/yellow] / [yellow]quit[/yellow] / Ctrl+C        exit
+"""
+
+def _repl():
+    console.print(REPL_HELP)
+    while True:
+        try:
+            line = console.input("[bold cyan]boolcalc>[/bold cyan] ").strip()
+        except (KeyboardInterrupt, EOFError):
+            console.print("\n[dim]bye[/dim]")
+            break
+
+        if not line:
+            continue
+        if line.lower() in ("exit", "quit", "q"):
+            console.print("[dim]bye[/dim]")
+            break
+        if line.lower() in ("help", "?"):
+            console.print(REPL_HELP)
+            continue
+
+        # Parse the line as if it were CLI args
+        try:
+            parts = shlex.split(line)
+            # First token is the expression, rest are flags
+            app(parts, standalone_mode=False)
+        except SystemExit:
+            pass
+        except Exception as e:
+            err_console.print(f"[red]Error:[/red] {e}")
+
+        console.print()
+
+
 if __name__ == "__main__":
-    app()
+    if len(sys.argv) == 1 and sys.stdin.isatty():
+        _repl()
+    else:
+        app()
