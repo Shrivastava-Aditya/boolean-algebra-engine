@@ -126,13 +126,21 @@ Created branch `python-rewrite` off `api-refactor`. Python rewrite will happen h
 
 ---
 
+### Prompt: "Yes please (start Python rewrite)"
+- Stripped Java files, set up structure: `core/`, `cli/`, `mcp_server/`, `api/`, `tests/`
+- Wrote `core/models.py` — `TruthTableRow`, `TruthTable`, `EvaluationResult` dataclasses
+- Wrote `core/parser.py` — `get_variables`, `validate`, `infix_to_prefix`
+- Wrote `core/evaluator.py` — prefix stack evaluator, `evaluate()` returns `TruthTable`
+- Fixed Python 3.9 compat (`from __future__ import annotations`)
+- Verified: `A+B`, `A.!A`, `A.(B+C)` all produce correct truth tables
+
+---
+
 ## Current State
 
-- Branch: `api-refactor`
-- Java bugs: all fixed
-- `DESIGN.md`: written and updated with Python architecture
-- `log.md`: this file
-- **Next step: Python rewrite of `core/`**
+- Repo: `boolean-algebra-engine-python`
+- `core/models.py`, `core/parser.py`, `core/evaluator.py` — done and working
+- **Next step: `core/synthesizer.py` (truth table → minimal expression)**
 
 ---
 
