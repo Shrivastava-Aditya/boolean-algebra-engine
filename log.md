@@ -101,6 +101,26 @@ Log every prompt and a short summary of the result in `log.md` as the conversati
 
 ---
 
+### Prompt: "Yes commit and push"
+Two commits made on `python-rewrite`. Push failed — remote is HTTPS, needs auth. User pushed manually.
+
+### Prompt: "Done."
+Branch `python-rewrite` live on remote.
+
+### Prompt: "Why is CLI not available, how can I enable that"
+Installed `gh` CLI via dnf from official GitHub RPM repo. User authenticated via browser.
+
+### Prompt: "Logged in"
+- Renamed repo: `Boolean-Algebra-Calculator` → `boolean-algebra-java`
+- Created new repo: `boolean-algebra-engine` (Python project home)
+- Updated local remote URL to point at `boolean-algebra-java`
+
+### Prompt: "Rename it to engine-python, because we will repurpose it in Go too, mostly for CUDA/GPU"
+- Renamed `boolean-algebra-engine` → `boolean-algebra-engine-python`
+- Future plan: `boolean-algebra-engine-go` for GPU/CUDA work
+
+---
+
 ### Prompt: "Fork over this branch for that"
 Created branch `python-rewrite` off `api-refactor`. Python rewrite will happen here.
 
