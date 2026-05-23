@@ -283,6 +283,24 @@ Variables: uppercase `A`–`Z`. Parentheses override precedence. Up to 26 variab
 
 ---
 
+## vs SymPy and boolean.py
+
+**SymPy** (`sympy.logic`) is more powerful for pure boolean mathematics — its DPLL-based `satisfiable()` scales better beyond 15 variables, and `simplify_logic()` covers similar minimization ground. If you're doing symbolic mathematics, use SymPy.
+
+**boolean.py** handles expression parsing and symbolic simplification cleanly. If you need to manipulate boolean expressions as objects, it's the right tool.
+
+**This engine is different in three ways:**
+
+1. **Zero-dependency core.** SymPy pulls in numpy, mpmath, and the full symbolic stack. `core/` is plain Python — no install side-effects, embeds anywhere.
+
+2. **Built for AI pipelines, not mathematics.** `check_prompt_logic` audits a set of rules for pairwise conflicts — the kind of check you run on a system prompt or a business rule engine before an agent acts on it. Neither SymPy nor boolean.py has this concept.
+
+3. **The integration layer.** MCP server for Claude Desktop, NL layer for plain English input, REST API, benchmark against LLMs — none of this exists in math-focused libraries because it's not a math problem. It's an AI reliability problem.
+
+If you want to do boolean algebra, SymPy is the answer. If you want to verify that your AI agent's rules don't contradict each other, this is built for that.
+
+---
+
 ## Credibility
 
 The engine does not sample, approximate, or predict. It evaluates every possible input combination:
