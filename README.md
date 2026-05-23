@@ -10,6 +10,35 @@ pip install boolean-algebra-engine
 
 ---
 
+## Quick start
+
+Zero dependencies. Works immediately after install.
+
+```python
+from core.evaluator import evaluate
+from core.synthesizer import synthesize
+
+# Does a contradiction exist?
+table, _ = evaluate("A.!A")
+print(table.satisfiable)   # False — always a contradiction
+
+# Can two rules both be true simultaneously?
+table, _ = evaluate("(A.B).(!A)")
+print(table.satisfiable)   # False — A and !A can't both hold
+
+# Full truth table
+table, _ = evaluate("A.(B+C)")
+print(table.variables)     # ['A', 'B', 'C']
+print(table.minterms)      # [5, 6, 7]
+print(table.satisfiable)   # True
+
+# Simplify to minimal form
+minimal, _ = synthesize(table)
+print(minimal)             # A.C+A.B
+```
+
+---
+
 ## The problem
 
 Six rules. Three variables. Written by four people over six months.
