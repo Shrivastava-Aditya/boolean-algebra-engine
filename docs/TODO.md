@@ -41,6 +41,23 @@
 - [ ] Redis expression cache — skip recomputation on repeated expressions
 - [ ] Benchmark engine speed at n=5,10,15,20 with and without numpy
 
+### DPLL / SAT backend (removes variable count ceiling)
+
+Current exhaustive truth table enumeration caps out at ~20 variables (2^20 = 1M rows).
+DPLL finds satisfying assignments or proves UNSAT without visiting most of the search space —
+same correctness guarantee, no artificial ceiling. This makes the engine viable for real
+enterprise rule sets (50–100+ variables) and removes the one area where SymPy is objectively
+better. Combine with the MCP server and the pitch becomes: Claude can verify any rule set
+it reasons about, regardless of complexity.
+
+- [ ] Implement DPLL satisfiability check as alternative backend
+- [ ] Threshold switch — use truth table for n ≤ 16, DPLL for n > 16
+- [ ] Keep exhaustive path as default for small n (simpler, easier to audit)
+- [ ] Cross-verify DPLL vs truth table at n ≤ 16 — must agree on every case
+- [ ] Update benchmark verify_with_z3 to also run DPLL cross-check
+- [ ] Update README — remove "up to 26 variables" hard claim, replace with practical note
+- [ ] Consider z3 as DPLL backend rather than reimplementing from scratch
+
 ---
 
 ## Go Extension (`boolean-algebra-engine-go`)
