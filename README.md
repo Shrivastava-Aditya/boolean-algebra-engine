@@ -49,7 +49,10 @@ The engine is the oracle — ground truth is computed by exhaustive enumeration,
 
 ```
 python3 benchmark.py --provider ollama --model tinyllama --cases 20
+python3 benchmark.py --provider ollama --model llama3.2:3b --cases 20
 ```
+
+**tinyllama — 1.1B parameters**
 
 ```
 ╭──────────────────────── Benchmark ─────────────────────────╮
@@ -70,31 +73,76 @@ python3 benchmark.py --provider ollama --model tinyllama --cases 20
   3  ✗   A.B             A.!B            A B       no    yes
   4  ✓   A+!B            A.(B+C)         A B C    yes    yes
   5  ✗   A.B             A^B             A B       no    yes
-  ...
+  6  ✓   !A+B.C          B               A B C    yes    yes
+  7  ✓   A.B+C           A+B             A B C    yes    yes
+  8  ✓   A+B.C.D         C               A B C D  yes    yes
+  9  ✓   A.B             B               A B      yes    yes
+ 10  ✓   !C              !B              B C      yes    yes
+ ...
 
-╭─────────── Results — ollama/tinyllama ────────────╮
-│ Model:               ollama/tinyllama              │
-│ Total cases:         20  (10 conflict · 10 compat) │
-│ Variables:           3  (A, B, C)                  │
-│ Temperature:         0  (deterministic)            │
-│ Max tokens:          5                             │
-│ Correct:             10                            │
-│ Hallucinated:        10                            │
-│ Hallucination rate:  50.0%                         │
-│ Missed conflicts:    10/10  (100.0%)               │
-│ Missed compatibles:  0/10   (0.0%)                 │
-╰────────────────────────────────────────────────────╯
+╭─────────── Results — ollama/tinyllama ─────────────╮
+│ Model:               ollama/tinyllama               │
+│ Total cases:         20  (10 conflict · 10 compat)  │
+│ Variables:           3  (A, B, C)                   │
+│ Temperature:         0  (deterministic)             │
+│ Max tokens:          5                              │
+│ Correct:             10                             │
+│ Hallucinated:        10                             │
+│ Hallucination rate:  50.0%                          │
+│ Missed conflicts:    10/10  (100.0%)                │
+│ Missed compatibles:  0/10   (0.0%)                  │
+╰─────────────────────────────────────────────────────╯
 ```
 
-**tinyllama (1.1B)** — always answers "yes". Catches every compatible pair, misses every conflict. 100% miss rate on contradictions.
+**llama3.2:3b — 3B parameters**
 
-**llama3.2:3b (3B)** — always answers "no". Catches every conflict, misses every compatible pair. 100% miss rate on compatible expressions.
+```
+╭──────────────────────── Benchmark ─────────────────────────╮
+│ Model        ollama/llama3.2:3b                            │
+│ Cases        20  (10 conflict · 10 compatible)             │
+│ Variables    4  (A, B, C, D)                               │
+│ Temperature  0  (deterministic)                            │
+│ Max tokens   5  (yes/no answer only)                       │
+│ Workers      8 parallel inference calls                    │
+╰────────────────────────────────────────────────────────────╯
 
-Both models score 50% — equal to a coin flip — but in opposite directions. Neither is reasoning. Both are outputting a constant with a different bias.
+  ollama/llama3.2:3b — 20/20 cases | 50.0% hallucination rate
+
+  #      Rule 1          Rule 2          vars    engine  llm
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1  ✓   B               !B              B         no     no
+  2  ✓   A.B+C           !A.!B.!C        A B C     no     no
+  3  ✓   A.B             A.!B            A B       no     no
+  4  ✗   A+!B            A.(B+C)         A B C    yes     no
+  5  ✓   A.B             A^B             A B       no     no
+  6  ✗   !A+B.C          B               A B C    yes     no
+  7  ✗   A.B+C           A+B             A B C    yes     no
+  8  ✗   A+B.C.D         C               A B C D  yes     no
+  9  ✗   A.B             B               A B      yes     no
+ 10  ✗   !C              !B              B C      yes     no
+ ...
+
+╭─────────── Results — ollama/llama3.2:3b ───────────╮
+│ Model:               ollama/llama3.2:3b             │
+│ Total cases:         20  (10 conflict · 10 compat)  │
+│ Variables:           4  (A, B, C, D)                │
+│ Temperature:         0  (deterministic)             │
+│ Max tokens:          5                              │
+│ Correct:             10                             │
+│ Hallucinated:        10                             │
+│ Hallucination rate:  50.0%                          │
+│ Missed conflicts:    0/10   (0.0%)                  │
+│ Missed compatibles:  10/10  (100.0%)                │
+╰─────────────────────────────────────────────────────╯
+```
+
+Both models score 50% — equal to a coin flip — but in opposite directions. tinyllama always answers "yes", llama3.2:3b always answers "no". Neither is reasoning. Both are outputting a constant.
+
+The `vars` column shows how many variables each case involves. The `engine` column is ground truth. Every mismatch with `llm` is a provable hallucination — not an opinion.
 
 ![Benchmark results — 20 cases](https://raw.githubusercontent.com/Shrivastava-Aditya/boolean-algebra-engine-python/engine-PyPI/images/benchmark_20cases.png)
 
-The per-case strips (bottom row) make the bias visible: every conflict is uniformly wrong for tinyllama, every compatible uniformly wrong for llama3.2:3b. No case-by-case variation — no reasoning happening at all.
+Per-case strips (bottom row of the chart): every conflict cell is uniformly one colour per model, every compatible cell is the opposite. No case-by-case variation — no reasoning happening at all.
 
 ---
 
@@ -119,56 +167,6 @@ pip install "boolean-algebra-engine[nl-anthropic]"
 # With NL layer (OpenAI)
 pip install "boolean-algebra-engine[nl-openai]"
 ```
-
----
-
-## Use cases
-
-The same pattern appears everywhere: statements that sound consistent individually, contradict each other when held together. The engine is a universal detector for that failure mode.
-
-### System prompts
-
-> "Always be helpful to the user and answer every question fully.
-> Never discuss competitor products under any circumstances.
-> If a user asks to compare us to a competitor, give a full and helpful answer."
-
-Rule 2 says no answer when a competitor is mentioned. Rule 3 says give a full answer. Both cannot apply. The engine finds this in milliseconds.
-
-### Business rules
-
-> "All customers are treated equally regardless of subscription tier.
-> Premium customers receive priority support and faster response times."
-
-`E` (equal treatment) and `P` (priority treatment) cannot both be true. Conflicting pair found.
-
-### Legal contracts
-
-> "This agreement renews automatically each year unless cancelled.
-> Either party may terminate with 30 days written notice.
-> Termination requires written consent from both parties."
-
-Clause 2 (unilateral termination) and Clause 3 (mutual consent) directly contradict. The contract has no defined termination mechanism.
-
-### Medical protocols
-
-> "Administer medication A when the patient has symptom X.
-> Do not administer medication A if the patient has condition Y.
-> Patients presenting with symptom X almost always have condition Y."
-
-Rules 1 and 2 conflict whenever `X=1, Y=1`. Rule 3 makes this the common case. The protocol contradicts itself for the majority of patients it was written to treat.
-
-### Personal reasoning
-
-> "I have been using Linux for over 6 years and Mac for 3 years.
-> If I did not use Linux, I would have never switched to Mac.
-> But my use of Mac has no relation to my use of Linux in any way."
-
-- Sentence 3: `!L → !M` — Linux caused the switch to Mac
-- Sentence 4: M and L are independent
-
-`L=0, M=1` satisfies sentence 4 but violates sentence 3. Both cannot be true simultaneously. Conflicting pair.
-
-More real-world examples across therapy, philosophy, journalism, and AI alignment in `docs/statements.md`.
 
 ---
 
@@ -221,20 +219,6 @@ Five tools Claude can call mid-conversation:
 
 ---
 
-## Visualisations
-
-![Truth table heatmap](https://raw.githubusercontent.com/Shrivastava-Aditya/boolean-algebra-engine-python/engine-PyPI/images/viz_2_truth_table.png)
-
-The Streamlit UI generates two classes of charts automatically from engine output:
-
-**Truth table heatmap** — every row rendered as a green/red grid. A contradiction is an entirely red output column. A pattern of minterms becomes visually obvious in one glance.
-
-**Conflict matrix** — N×N grid, one cell per rule pair. Red `✗` means always conflict. Green `✓` means no overlap. Yellow `≡` means duplicate rule. Three red cells in a matrix of 6 rules is immediately visible before the user finishes scrolling.
-
-![Failure panel](https://raw.githubusercontent.com/Shrivastava-Aditya/boolean-algebra-engine-python/engine-PyPI/images/viz_3_failure_panel.png)
-
----
-
 ## Operators
 
 | Symbol | Operation | Precedence |
@@ -274,8 +258,3 @@ The core evaluator is 15 lines (`core/evaluator.py`). No black box, no model wei
 
 90 tests across unit, integration, edge cases, and round-trips. All passing.
 
----
-
-## Related
-
-- [boolean-algebra-java](https://github.com/Shrivastava-Aditya/boolean-algebra-java) — original Java version, written during placement season
