@@ -175,7 +175,7 @@ Both models score 50% — equal to a coin flip — but in opposite directions. t
 
 The `vars` column shows how many variables each case involves. The `engine` column is ground truth. Every mismatch with `llm` is a provable hallucination — not an opinion.
 
-![Benchmark results — 20 cases](https://raw.githubusercontent.com/Shrivastava-Aditya/boolean-LLM-eval/main/images/benchmark_20cases.png)
+![Benchmark results — 20 cases](https://raw.githubusercontent.com/Shrivastava-Aditya/bool-LLM-ngn/main/images/benchmark_20cases.png)
 
 Per-case strips (bottom row of the chart): every conflict cell is uniformly one colour per model, every compatible cell is the opposite. No case-by-case variation — no reasoning happening at all.
 

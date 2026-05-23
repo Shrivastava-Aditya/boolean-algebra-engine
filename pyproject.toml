@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "boolean-algebra-engine"
-version = "0.1.9"
+version = "0.1.10"
 description = "Deterministic logic layer for AI agents — catch logical contradictions in system prompts, rules, and agent reasoning"
 readme = "README.md"
 license = "GPL-3.0-only"
@@ -40,9 +40,9 @@ dev = ["pytest>=8.0.0", "httpx>=0.24.0", "z3-solver>=4.12.0"]
 boolcalc = "cli.main:app"
 
 [project.urls]
-Homepage = "https://github.com/Shrivastava-Aditya/boolean-LLM-eval"
-Repository = "https://github.com/Shrivastava-Aditya/boolean-LLM-eval"
-Issues = "https://github.com/Shrivastava-Aditya/boolean-LLM-eval/issues"
+Homepage = "https://github.com/Shrivastava-Aditya/bool-LLM-ngn"
+Repository = "https://github.com/Shrivastava-Aditya/bool-LLM-ngn"
+Issues = "https://github.com/Shrivastava-Aditya/bool-LLM-ngn/issues"
 
 [tool.setuptools.packages.find]
 include = ["core*", "cli*", "mcp_server*", "api*", "nl*"]
