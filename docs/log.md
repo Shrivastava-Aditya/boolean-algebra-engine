@@ -577,6 +577,63 @@ GitHub Actions triggered — build, publish, release created automatically.
 
 ---
 
+## Session 4 — 2026-05-23
+
+### Published versions 0.1.9 → 0.1.11
+- 0.1.9 — Trusted Publishing (PyPI OIDC, no stored token), CI switched from twine + API key
+- 0.1.10 — Renamed public repo from `boolean-LLM-eval` → `bool-LLM-ngn`, updated all URLs
+- 0.1.11 — Bumped after 0.1.10 failed (400 Bad Request — version already existed after Trusted Publisher mismatch)
+- Trusted Publisher mismatch: PyPI config still pointed at old repo name, updated manually
+
+### Public repo renamed: `boolean-LLM-eval` → `bool-LLM-ngn`
+- Shorter, cleaner, still signals what it is
+- All URL references updated: README, pyproject.toml, publish.yml CI
+
+### Benchmarked gemma3:4b — 36.4% hallucination rate
+- Better than tinyllama (50%) and llama3.2:3b (50%), but still not reasoning
+- 9/20 cases timed out — Gemma3:4b too large for 8 parallel workers on local VM
+- Fix: `--workers 2` for local runs; long term: Groq free tier
+
+### Added live web dashboard (`dashboard.py`, `--web` flag)
+- Pure stdlib — zero new dependencies (Python http.server + SSE)
+- Cases stream live to localhost:8080 as they complete
+- Shows: config panel, progress bar, per-case table, final stats, benchmark chart
+- Accessible on public IP for VM users (binds to 0.0.0.0)
+
+### Created `docs/VARIABLE_CURVE.md`
+- Full methodology and build plan for the variable curve study
+- Variable counts: 3, 5, 7, 10, 15 — each doubles truth table rows
+- Models: tinyllama, llama3.2:3b, gemma3:4b, llama3.1:8b, GPT-4o
+- What to build: `--vars` flag, extended expression pools, numpy evaluator, curve.py, visualiser
+- The chart (hallucination rate vs variable count per model) is the finding
+
+### Distribution — first posts
+- Posted on r/ollama — benchmark results, 3 upvotes / 2 comments / 4h (not dead, too early to judge)
+- Posted on r/Boolean — math angle: "70 year old math that proves GPT is lying"
+- Strategy: r/LocalLLaMA next, HN after variable curve study is complete
+
+### Named the project: Quine
+- After Willard Van Orman Quine and the Quine-McCluskey algorithm already in the synthesizer
+- Sharp, CS-credible, directly tied to the codebase
+
+### Infrastructure vision confirmed
+- CUDA — GPU-parallel truth table evaluation (1 thread per row, 2^n parallel)
+- Redis — expression cache + job queue
+- Kubernetes — horizontal scaling of LLM workers for multi-model matrix runs
+- Dataset of hallucination rates across models and variable counts over time is the asset
+- Prometheus/Grafana deferred — relevant only when hosted API has real traffic
+
+### Groq signup blocked
+- Trace ID: `0034b9a8237d570e3ce12b00fc35230b` — server-side error, nothing actionable locally
+- Fallback: `--workers 2` for local Gemma runs until Groq clears
+- OpenAI/Anthropic keys also not yet available
+
+### Key insight this session
+The benchmark is evidence. The interception layer is the product.
+The variable curve (hallucination rate vs complexity, per model) is the finding that makes this HN-worthy and research-publishable.
+
+---
+
 ## Decisions Made
 
 | Decision | Reason |
