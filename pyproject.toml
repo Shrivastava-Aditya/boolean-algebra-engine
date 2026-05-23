@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "boolean-algebra-engine"
-version = "0.1.1"
-description = "Boolean algebra engine — evaluate expressions, generate truth tables, synthesize minimal forms"
+version = "0.1.5"
+description = "Deterministic logic layer for AI agents — catch logical contradictions in system prompts, rules, and agent reasoning"
 readme = "README.md"
 license = "GPL-3.0-only"
 requires-python = ">=3.9"
