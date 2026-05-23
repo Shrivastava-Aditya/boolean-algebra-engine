@@ -55,14 +55,16 @@ python3 benchmark.py --provider ollama --model llama3.2:3b --cases 20
 **tinyllama — 1.1B parameters**
 
 ```
-╭──────────────────────── Benchmark ─────────────────────────╮
-│ Model        ollama/tinyllama                              │
-│ Cases        20  (10 conflict · 10 compatible)             │
-│ Variables    3  (A, B, C)                                  │
-│ Temperature  0  (deterministic)                            │
-│ Max tokens   5  (yes/no answer only)                       │
-│ Workers      8 parallel inference calls                    │
-╰────────────────────────────────────────────────────────────╯
+⬡ z3  verifying 20 ground truth labels... ✓  all 20 cases agree
+
+╭───────────── benchmark config ──────────────╮
+│ model        ollama/tinyllama               │
+│ cases        20  (10 conflict · 10 compat)  │
+│ variables    3  (A, B, C)                   │
+│ temperature  0  (deterministic)             │
+│ max tokens   5  (yes / no)                  │
+│ workers      8  parallel                    │
+╰─────────────────────────────────────────────╯
 
   ollama/tinyllama — 20/20 cases | 50.0% hallucination rate
 
@@ -80,31 +82,33 @@ python3 benchmark.py --provider ollama --model llama3.2:3b --cases 20
  10  ✓   !C              !B              B C      yes    yes
  ...
 
-╭─────────── Results — ollama/tinyllama ─────────────╮
-│ Model:               ollama/tinyllama               │
-│ Total cases:         20  (10 conflict · 10 compat)  │
-│ Variables:           3  (A, B, C)                   │
-│ Temperature:         0  (deterministic)             │
-│ Max tokens:          5                              │
-│ Correct:             10                             │
-│ Hallucinated:        10                             │
-│ Hallucination rate:  50.0%                          │
-│ Missed conflicts:    10/10  (100.0%)                │
-│ Missed compatibles:  0/10   (0.0%)                  │
-╰─────────────────────────────────────────────────────╯
+╭─────────── results — ollama/tinyllama ─────────────╮
+│ model               ollama/tinyllama               │
+│ total cases         20  (10 conflict · 10 compat)  │
+│ variables           3  (A, B, C)                   │
+│ temperature         0  (deterministic)             │
+│ max tokens          5                              │
+│ correct             10                             │
+│ hallucinated        10                             │
+│ hallucination rate  50.0%                          │
+│ missed conflicts    10/10  (100.0%)                │
+│ missed compatibles  0/10   (0.0%)                  │
+╰────────────────────────────────────────────────────╯
 ```
 
 **llama3.2:3b — 3B parameters**
 
 ```
-╭──────────────────────── Benchmark ─────────────────────────╮
-│ Model        ollama/llama3.2:3b                            │
-│ Cases        20  (10 conflict · 10 compatible)             │
-│ Variables    4  (A, B, C, D)                               │
-│ Temperature  0  (deterministic)                            │
-│ Max tokens   5  (yes/no answer only)                       │
-│ Workers      8 parallel inference calls                    │
-╰────────────────────────────────────────────────────────────╯
+⬡ z3  verifying 20 ground truth labels... ✓  all 20 cases agree
+
+╭───────────── benchmark config ──────────────╮
+│ model        ollama/llama3.2:3b             │
+│ cases        20  (10 conflict · 10 compat)  │
+│ variables    4  (A, B, C, D)                │
+│ temperature  0  (deterministic)             │
+│ max tokens   5  (yes / no)                  │
+│ workers      8  parallel                    │
+╰─────────────────────────────────────────────╯
 
   ollama/llama3.2:3b — 20/20 cases | 50.0% hallucination rate
 
@@ -122,18 +126,18 @@ python3 benchmark.py --provider ollama --model llama3.2:3b --cases 20
  10  ✗   !C              !B              B C      yes     no
  ...
 
-╭─────────── Results — ollama/llama3.2:3b ───────────╮
-│ Model:               ollama/llama3.2:3b             │
-│ Total cases:         20  (10 conflict · 10 compat)  │
-│ Variables:           4  (A, B, C, D)                │
-│ Temperature:         0  (deterministic)             │
-│ Max tokens:          5                              │
-│ Correct:             10                             │
-│ Hallucinated:        10                             │
-│ Hallucination rate:  50.0%                          │
-│ Missed conflicts:    0/10   (0.0%)                  │
-│ Missed compatibles:  10/10  (100.0%)                │
-╰─────────────────────────────────────────────────────╯
+╭─────────── results — ollama/llama3.2:3b ───────────╮
+│ model               ollama/llama3.2:3b             │
+│ total cases         20  (10 conflict · 10 compat)  │
+│ variables           4  (A, B, C, D)                │
+│ temperature         0  (deterministic)             │
+│ max tokens          5                              │
+│ correct             10                             │
+│ hallucinated        10                             │
+│ hallucination rate  50.0%                          │
+│ missed conflicts    0/10   (0.0%)                  │
+│ missed compatibles  10/10  (100.0%)                │
+╰────────────────────────────────────────────────────╯
 ```
 
 Both models score 50% — equal to a coin flip — but in opposite directions. tinyllama always answers "yes", llama3.2:3b always answers "no". Neither is reasoning. Both are outputting a constant.

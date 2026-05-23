@@ -206,6 +206,61 @@ def generate_cases(n_each: int = 50, seed: int = 42):
 
 
 # ---------------------------------------------------------------------------
+# Z3 verification — cross-validates engine ground truth before any LLM call
+# ---------------------------------------------------------------------------
+
+def _expr_to_z3(expr):
+    import z3
+    z3_vars = {v: z3.Bool(v) for v in sorted(set(re.findall(r"[A-D]", expr)))}
+    # operator translation: our syntax → Python bitwise ops (z3 overloads these)
+    z3_expr = expr.replace("!", "~").replace(".", "&").replace("+", "|")
+    return eval(z3_expr, {"__builtins__": {}}, z3_vars)
+
+
+def _z3_satisfiable(e1: str, e2: str) -> bool:
+    import z3
+    s = z3.Solver()
+    s.add(_expr_to_z3(f"({e1})&({e2})"))
+    return s.check() == z3.sat
+
+
+def verify_with_z3(cases: list) -> bool:
+    """Cross-check every engine ground truth label against z3. Returns False on any mismatch."""
+    try:
+        import z3  # noqa: F401
+    except ImportError:
+        console.print("[yellow]Warning: z3-solver not installed — skipping verification.[/yellow]")
+        console.print("[yellow]  pip install z3-solver   to enable ground truth validation.[/yellow]")
+        return True
+
+    console.print(f"[bold blue]⬡ z3[/bold blue]  [dim]verifying {len(cases)} ground truth labels...[/dim]", end=" ")
+    mismatches = []
+
+    for e1, e2, engine_result in cases:
+        try:
+            z3_result = _z3_satisfiable(e1, e2)
+            if z3_result != engine_result:
+                mismatches.append((e1, e2, engine_result, z3_result))
+        except Exception as exc:
+            console.print(f"\n[red]z3 error on ({e1}, {e2}): {exc}[/red]")
+            mismatches.append((e1, e2, engine_result, None))
+
+    if mismatches:
+        console.print(f"\n[bold red]✗  {len(mismatches)} mismatch(es) — engine has a bug:[/bold red]")
+        for e1, e2, eng, z3r in mismatches:
+            console.print(
+                f"  [cyan]{e1}[/cyan] + [cyan]{e2}[/cyan]  "
+                f"engine={'yes' if eng else 'no'}  "
+                f"z3={'yes' if z3r else 'no' if z3r is not None else 'error'}"
+            )
+        console.print("[bold red]Aborting — ground truth is unverified.[/bold red]")
+        return False
+
+    console.print(f"[bold green]✓  all {len(cases)} cases agree[/bold green]")
+    return True
+
+
+# ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
 
@@ -223,27 +278,28 @@ def _make_live_table(results: list, total: int, model_name: str) -> Table:
 
     pending = total - done
     title = (
-        f"[bold]{model_name}[/bold]  —  "
-        f"{done}/{total} cases  |  "
-        f"[{colour}]{rate:.1f}% hallucination rate[/{colour}]"
-        + (f"  |  [dim]{pending} pending[/dim]" if pending else "")
+        f"[bold white]{model_name}[/bold white]  [dim]·[/dim]  "
+        f"[dim]{done}/{total}[/dim]  "
+        f"[{colour}]{rate:.1f}% hallucination[/{colour}]"
+        + (f"  [yellow]{pending} pending[/yellow]" if pending else "  [bold green]done[/bold green]")
     )
 
-    table = Table(title=title, box=box.SIMPLE_HEAVY, show_lines=False, expand=True)
-    table.add_column("#",      style="dim",    width=4,  justify="right")
-    table.add_column("",                       width=2)
-    table.add_column("Rule 1", style="cyan",   no_wrap=True)
-    table.add_column("Rule 2", style="cyan",   no_wrap=True)
-    table.add_column("vars",   style="dim",    width=8)
-    table.add_column("engine",                 width=7,  justify="center")
-    table.add_column("llm",                    width=5,  justify="center")
+    table = Table(title=title, box=box.SIMPLE_HEAVY, show_lines=False, expand=True,
+                  border_style="blue")
+    table.add_column("#",      style="dim",          width=4,  justify="right")
+    table.add_column("",                             width=2)
+    table.add_column("Rule 1", style="cyan",         no_wrap=True)
+    table.add_column("Rule 2", style="bright_cyan",  no_wrap=True)
+    table.add_column("vars",   style="blue",         width=8)
+    table.add_column("engine",                       width=7,  justify="center")
+    table.add_column("llm",                          width=5,  justify="center")
 
     for i, r in enumerate(results[-30:], start=max(1, done - 29)):
-        mark      = "[green]✓[/green]" if r["correct"] else "[red]✗[/red]"
-        engine_val = "yes" if r["ground_truth"] else "no"
-        llm_val   = "yes" if r["llm"] else "no"
-        llm_col   = llm_val if r["correct"] else f"[red]{llm_val}[/red]"
-        vars_used = _case_vars(r["e1"], r["e2"])
+        mark       = "[bold green]✓[/bold green]" if r["correct"] else "[bold red]✗[/bold red]"
+        engine_val = ("[green]yes[/green]" if r["ground_truth"] else "[red]no[/red]")
+        llm_val    = "yes" if r["llm"] else "no"
+        llm_col    = f"[dim]{llm_val}[/dim]" if r["correct"] else f"[bold red]{llm_val}[/bold red]"
+        vars_used  = _case_vars(r["e1"], r["e2"])
         table.add_row(str(i), mark, r["e1"], r["e2"], vars_used, engine_val, llm_col)
 
     return table
@@ -255,15 +311,16 @@ def _print_config(provider: Provider, cases: list, workers: int):
     all_vars   = sorted(set(re.findall(r"[A-D]", " ".join(e1 + e2 for e1, e2, _ in cases))))
 
     grid = Table.grid(padding=(0, 2))
-    grid.add_column(style="bold dim", no_wrap=True)
-    grid.add_column()
-    grid.add_row("Model",        provider.name)
-    grid.add_row("Cases",        f"{len(cases)}  ({n_conflict} conflict · {n_compat} compatible)")
-    grid.add_row("Variables",    f"{len(all_vars)}  ({', '.join(all_vars)})")
-    grid.add_row("Temperature",  "0  (deterministic)")
-    grid.add_row("Max tokens",   "5  (yes/no answer only)")
-    grid.add_row("Workers",      f"{min(workers, len(cases))} parallel inference calls")
-    console.print(Panel(grid, title="[bold]Benchmark[/bold]", expand=False))
+    grid.add_column(style="dim",          no_wrap=True)
+    grid.add_column(style="bright_white", no_wrap=True)
+    grid.add_row("model",        f"[bold]{provider.name}[/bold]")
+    grid.add_row("cases",        f"[cyan]{len(cases)}[/cyan]  [dim]({n_conflict} conflict · {n_compat} compatible)[/dim]")
+    grid.add_row("variables",    f"[cyan]{len(all_vars)}[/cyan]  [dim]({', '.join(all_vars)})[/dim]")
+    grid.add_row("temperature",  "[dim]0  (deterministic)[/dim]")
+    grid.add_row("max tokens",   "[dim]5  (yes / no)[/dim]")
+    grid.add_row("workers",      f"[cyan]{min(workers, len(cases))}[/cyan]  [dim]parallel[/dim]")
+    console.print(Panel(grid, title="[bold blue]benchmark config[/bold blue]",
+                         border_style="blue", expand=False))
 
 
 def run_benchmark(provider: Provider, cases: list, workers: int = 8) -> dict:
@@ -308,26 +365,27 @@ def _summarise(model_name: str, results: list) -> dict:
     all_vars = sorted(set(re.findall(r"[A-D]", " ".join(r["e1"] + r["e2"] for r in results))))
 
     summary_text = (
-        f"[bold]Model:[/bold]               {model_name}\n"
-        f"[bold]Total cases:[/bold]         {total}  "
-        f"({len(conflict_results)} conflict · {len(compat_results)} compatible)\n"
-        f"[bold]Variables:[/bold]           {len(all_vars)}  ({', '.join(all_vars)})\n"
-        f"[bold]Temperature:[/bold]         0  (deterministic)\n"
-        f"[bold]Max tokens:[/bold]          5\n"
-        f"[bold]Correct:[/bold]             {correct_count}\n"
-        f"[bold]Hallucinated:[/bold]        {wrong_count}\n"
-        f"[bold]Hallucination rate:[/bold]  [{colour}]{rate:.1f}%[/{colour}]\n"
+        f"[dim]model[/dim]               [bold white]{model_name}[/bold white]\n"
+        f"[dim]total cases[/dim]         [cyan]{total}[/cyan]  [dim]({len(conflict_results)} conflict · {len(compat_results)} compatible)[/dim]\n"
+        f"[dim]variables[/dim]           [cyan]{len(all_vars)}[/cyan]  [dim]({', '.join(all_vars)})[/dim]\n"
+        f"[dim]temperature[/dim]         [dim]0  (deterministic)[/dim]\n"
+        f"[dim]max tokens[/dim]          [dim]5[/dim]\n"
+        f"[dim]correct[/dim]             [green]{correct_count}[/green]\n"
+        f"[dim]hallucinated[/dim]        [red]{wrong_count}[/red]\n"
+        f"[dim]hallucination rate[/dim]  [{colour}]{rate:.1f}%[/{colour}]\n"
     )
     if conflict_results:
-        summary_text += (f"[bold]Missed conflicts:[/bold]    "
-                         f"{missed_conflicts}/{len(conflict_results)}  "
-                         f"({missed_conflicts / len(conflict_results) * 100:.1f}%)\n")
+        mc_rate = missed_conflicts / len(conflict_results) * 100
+        mc_col  = "red" if mc_rate > 50 else "yellow" if mc_rate > 0 else "green"
+        summary_text += (f"[dim]missed conflicts[/dim]    [{mc_col}]{missed_conflicts}/{len(conflict_results)}  ({mc_rate:.1f}%)[/{mc_col}]\n")
     if compat_results:
-        summary_text += (f"[bold]Missed compatibles:[/bold]  "
-                         f"{missed_compat}/{len(compat_results)}  "
-                         f"({missed_compat / len(compat_results) * 100:.1f}%)\n")
+        mp_rate = missed_compat / len(compat_results) * 100
+        mp_col  = "red" if mp_rate > 50 else "yellow" if mp_rate > 0 else "green"
+        summary_text += (f"[dim]missed compatibles[/dim]  [{mp_col}]{missed_compat}/{len(compat_results)}  ({mp_rate:.1f}%)[/{mp_col}]\n")
 
-    console.print(Panel(summary_text.strip(), title=f"[bold]Results — {model_name}[/bold]", expand=False))
+    console.print(Panel(summary_text.strip(),
+                         title=f"[bold {colour}]results — {model_name}[/bold {colour}]",
+                         border_style=colour, expand=False))
 
     if wrong_count:
         console.print("\n[bold red]Failed cases:[/bold red]")
@@ -502,6 +560,9 @@ if __name__ == "__main__":
     total_cases = n_each * 2
     print(f"Generating {total_cases} test cases ({n_each} conflicting, {n_each} compatible)...")
     cases = generate_cases(n_each=n_each, seed=args.seed)
+
+    if not verify_with_z3(cases):
+        sys.exit(1)
 
     providers = build_providers(args)
     if not providers:
