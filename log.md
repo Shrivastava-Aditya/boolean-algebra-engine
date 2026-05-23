@@ -417,6 +417,35 @@ The easiest possible version of the test. Rate on real pipelines will be higher.
 
 Next: run at 100 cases with a stronger model. That number is publishable.
 
+### Session 2 wrap-up — 2026-05-23
+
+**What was built this session:**
+
+- Repo made public → pip installable from GitHub
+- `visualisations.ipynb` — Colab notebook, complexity vs variables + conflict graph
+- `benchmark.py` — LLM hallucination benchmark, engine as oracle
+- Installed Ollama + tinyllama locally, ran first benchmark
+- **First result: 40% hallucination rate, tinyllama 1B, 10 cases, 3 variables**
+- `visualise_results.py` — 4 Reddit-ready visualisations saved to `images/`
+- `FAILURES.md` — real-world severity analysis of all 4 failures
+- `BENCHMARK_PLAN.md` — batching, async, goroutines, multi-model, variable matrix
+- `TODO.md` — full build list across all layers
+- Branch structure: `master` (project) · `product-readme` (product) · `benchmark` (measurement)
+- Repo made private again
+
+**Key decisions:**
+- Go extension is the scale path — goroutines for benchmark runner, CUDA for engine
+- Python stays as reference implementation and interface layer
+- Variable increment test is the study — hallucination rate vs n variables, per model
+- The degradation curve never reaches zero — that is the finding
+
+**What's next:**
+- Run benchmark at 100 cases
+- Add Groq free tier provider (fast, no cost)
+- Run variable increment test at n=3,5,7,10
+- Get API credits for GPT-4o run
+- Merge product-readme and benchmark into master
+
 ---
 
 ## Current State
