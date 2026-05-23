@@ -9,7 +9,8 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write      # create GitHub releases
+      id-token: write      # Trusted Publishing (PyPI OIDC — no stored token)
 
     steps:
       - uses: actions/checkout@v4
@@ -20,7 +21,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install build tools
-        run: pip install build twine
+        run: pip install build
 
       - name: Patch image URLs to use git tag
         env:
@@ -35,11 +36,8 @@ jobs:
       - name: Restore README
         run: git checkout README.md
 
-      - name: Publish to PyPI
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: twine upload dist/*
+      - name: Publish to PyPI (Trusted Publishing)
+        uses: pypa/gh-action-pypi-publish@release/v1
 
       - name: Create GitHub release
         env:
