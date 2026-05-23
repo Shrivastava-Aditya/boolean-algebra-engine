@@ -1,0 +1,50 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build tools
+        run: pip install build twine
+
+      - name: Patch image URLs to use git tag
+        env:
+          TAG: ${{ github.ref_name }}
+          REPO: Shrivastava-Aditya/boolean-algebra-engine-python
+        run: |
+          sed -i "s|https://raw.githubusercontent.com/${REPO}/[^/]*/images/|https://raw.githubusercontent.com/${REPO}/${TAG}/images/|g" README.md
+
+      - name: Build
+        run: python -m build
+
+      - name: Restore README
+        run: git checkout README.md
+
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: twine upload dist/*
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ github.ref_name }} dist/* \
+            --title "${{ github.ref_name }}" \
+            --generate-notes
