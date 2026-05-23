@@ -140,3 +140,57 @@ if __name__ == "__main__":
         for r in results:
             if not r["correct"]:
                 print(f"  {r['e1']:<22} + {r['e2']:<22}  engine={'yes' if r['ground_truth'] else 'no'}  llm={'yes' if r['llm'] else 'no'}")
+
+    # --- Visualisation ---
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5))
+    fig.patch.set_facecolor("#0d1117")
+
+    # Left: summary bar chart
+    ax1.set_facecolor("#0d1117")
+    categories = ["All cases", "Conflicting pairs", "Compatible pairs"]
+    correct_vals = [
+        correct_count,
+        len(conflict_results) - missed_conflicts,
+        len(compat_results) - missed_compat,
+    ]
+    wrong_vals = [wrong_count, missed_conflicts, missed_compat]
+    totals = [total, len(conflict_results), len(compat_results)]
+    x = np.arange(len(categories))
+    w = 0.35
+    ax1.bar(x - w/2, correct_vals, w, label="Correct", color="#3fb950")
+    ax1.bar(x + w/2, wrong_vals,   w, label="Hallucinated", color="#f85149")
+    for i, (c, wr, t) in enumerate(zip(correct_vals, wrong_vals, totals)):
+        ax1.text(i - w/2, c + 0.05, f"{c}/{t}", ha="center", color="#e6edf3", fontsize=9)
+        ax1.text(i + w/2, wr + 0.05, f"{wr}/{t}", ha="center", color="#e6edf3", fontsize=9)
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(categories, color="#e6edf3", fontsize=10)
+    ax1.set_ylabel("Cases", color="#e6edf3")
+    ax1.set_title(f"Hallucination rate: {wrong_count/total*100:.0f}%  |  Model: {MODEL}", color="#e6edf3", fontsize=11)
+    ax1.tick_params(colors="#e6edf3")
+    ax1.spines[:].set_edgecolor("#30363d")
+    ax1.legend(facecolor="#161b22", labelcolor="#e6edf3")
+
+    # Right: case-by-case grid
+    ax2.set_facecolor("#0d1117")
+    ax2.set_title("Case-by-case results", color="#e6edf3", fontsize=11)
+    for i, r in enumerate(results):
+        y = len(results) - 1 - i
+        color = "#3fb950" if r["correct"] else "#f85149"
+        label = f"{r['e1']}  +  {r['e2']}"
+        verdict = "✓" if r["correct"] else f"✗  (llm={'yes' if r['llm'] else 'no'}, engine={'yes' if r['ground_truth'] else 'no'})"
+        ax2.text(0.02, y, label, color="#e6edf3", fontsize=8, va="center", transform=ax2.transData)
+        ax2.text(0.98, y, verdict, color=color, fontsize=8, va="center", ha="right", transform=ax2.transData)
+    ax2.set_xlim(0, 1)
+    ax2.set_ylim(-0.5, len(results) - 0.5)
+    ax2.axis("off")
+
+    plt.tight_layout()
+    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "benchmark_results.png")
+    plt.savefig(out, dpi=140, bbox_inches="tight", facecolor="#0d1117")
+    plt.close()
+    print(f"\nPlot saved: {out}")
