@@ -43,17 +43,58 @@ Nobody caught these by reading the rules. The engine caught them by checking eve
 
 ## The benchmark
 
-![Engine vs LLM](https://raw.githubusercontent.com/Shrivastava-Aditya/boolean-algebra-engine-python/engine-PyPI/images/viz_4_engine_vs_llm.png)
+The engine is the oracle — ground truth is computed by exhaustive enumeration, not guessed. Every LLM disagreement is a provable hallucination.
 
-The engine is the oracle — ground truth is computed by exhaustive enumeration, not guessed by a human labeler.
+**Methodology:** generate pairs of boolean expressions where the correct answer (satisfiable or not) is known exactly. Ask the LLM. Compare. No ambiguity, no human labeling, no interpretation.
 
-**First result:** tinyllama (1B) · 3 variables · 10 cases · **40% hallucination rate.**
+```
+python3 benchmark.py --provider ollama --model tinyllama --cases 20
+```
 
-The methodology: generate rule sets where the correct logical answer is known (computed by the engine), ask an LLM the same question, compare. Every disagreement is a provable hallucination. No ambiguity. No interpretation.
+```
+╭──────────────────────── Benchmark ─────────────────────────╮
+│ Model        ollama/tinyllama                              │
+│ Cases        20  (10 conflict · 10 compatible)             │
+│ Variables    3  (A, B, C)                                  │
+│ Temperature  0  (deterministic)                            │
+│ Max tokens   5  (yes/no answer only)                       │
+│ Workers      8 parallel inference calls                    │
+╰────────────────────────────────────────────────────────────╯
 
-![Benchmark results](https://raw.githubusercontent.com/Shrivastava-Aditya/boolean-algebra-engine-python/engine-PyPI/images/benchmark_results.png)
+  ollama/tinyllama — 20/20 cases | 50.0% hallucination rate
 
-Full benchmark across models is in progress. See `BENCHMARK_PLAN.md`.
+  #      Rule 1          Rule 2          vars    engine  llm
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1  ✗   B               !B              B         no    yes
+  2  ✗   A.B+C           !A.!B.!C        A B C     no    yes
+  3  ✗   A.B             A.!B            A B       no    yes
+  4  ✓   A+!B            A.(B+C)         A B C    yes    yes
+  5  ✗   A.B             A^B             A B       no    yes
+  ...
+
+╭─────────── Results — ollama/tinyllama ────────────╮
+│ Model:               ollama/tinyllama              │
+│ Total cases:         20  (10 conflict · 10 compat) │
+│ Variables:           3  (A, B, C)                  │
+│ Temperature:         0  (deterministic)            │
+│ Max tokens:          5                             │
+│ Correct:             10                            │
+│ Hallucinated:        10                            │
+│ Hallucination rate:  50.0%                         │
+│ Missed conflicts:    10/10  (100.0%)               │
+│ Missed compatibles:  0/10   (0.0%)                 │
+╰────────────────────────────────────────────────────╯
+```
+
+**tinyllama (1.1B)** — always answers "yes". Catches every compatible pair, misses every conflict. 100% miss rate on contradictions.
+
+**llama3.2:3b (3B)** — always answers "no". Catches every conflict, misses every compatible pair. 100% miss rate on compatible expressions.
+
+Both models score 50% — equal to a coin flip — but in opposite directions. Neither is reasoning. Both are outputting a constant with a different bias.
+
+![Benchmark results — 20 cases](https://raw.githubusercontent.com/Shrivastava-Aditya/boolean-algebra-engine-python/engine-PyPI/images/benchmark_20cases.png)
+
+The per-case strips (bottom row) make the bias visible: every conflict is uniformly wrong for tinyllama, every compatible uniformly wrong for llama3.2:3b. No case-by-case variation — no reasoning happening at all.
 
 ---
 
@@ -127,7 +168,7 @@ Rules 1 and 2 conflict whenever `X=1, Y=1`. Rule 3 makes this the common case. T
 
 `L=0, M=1` satisfies sentence 4 but violates sentence 3. Both cannot be true simultaneously. Conflicting pair.
 
-More real-world examples across therapy, philosophy, journalism, and AI alignment in `statements.md`.
+More real-world examples across therapy, philosophy, journalism, and AI alignment in `docs/statements.md`.
 
 ---
 
