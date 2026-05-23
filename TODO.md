@@ -45,16 +45,34 @@
 
 ## Go Extension (`boolean-algebra-engine-go`)
 
+**Phase 1 — Core engine port**
 - [ ] Set up repo — `boolean-algebra-engine-go`
-- [ ] Port `core/parser.py` → Go (shunting-yard)
-- [ ] Port `core/evaluator.py` → Go (prefix stack, 2^n loop)
-- [ ] Port `core/synthesizer.py` → Go (Quine-McCluskey — most complex port)
-- [ ] Verify Go engine against Python engine — same truth tables for all test cases
-- [ ] Goroutine benchmark runner — replace Python asyncio with goroutine pool
-- [ ] Results channel pattern — collect LLM responses as they complete
-- [ ] CUDA evaluator — 1 row = 1 GPU thread, 2^n parallel
-- [ ] Expose Go engine via HTTP — Python interfaces call Go instead of Python core
-- [ ] CLI in Go — `boolcalc` binary, replaces Python CLI for speed
+- [ ] Port `core/parser.py` → Go (shunting-yard, same operator precedence)
+- [ ] Port `core/evaluator.py` → Go (prefix stack, 2^n loop, no GIL)
+- [ ] Port `core/synthesizer.py` → Go (Quine-McCluskey — most complex, set operations)
+- [ ] Cross-verify Go vs Python — run same expressions through both, assert identical truth tables
+- [ ] Port 90 Python tests → Go test suite — Go engine is correct if it passes all of them
+
+**Phase 2 — Benchmark runner**
+- [ ] Goroutine pool — one goroutine per case, results channel
+- [ ] LLM provider interface — `Provider` interface, `Ask(prompt) string`
+- [ ] Implement OllamaProvider in Go — HTTP to localhost:11434
+- [ ] Implement OpenAICompatProvider in Go — covers Groq, Together, any compat endpoint
+- [ ] Replace Python benchmark runner with Go binary — call as subprocess or rewrite
+- [ ] Measure speedup vs Python asyncio — target 4-min full matrix vs 30-min
+
+**Phase 3 — CUDA acceleration**
+- [ ] CUDA evaluator — 1 row = 1 GPU thread, 2^n rows parallel
+- [ ] Benchmark CUDA vs Go CPU loop at n=10, 15, 20, 30
+- [ ] numpy bridge — Python can call Go CUDA evaluator via subprocess or HTTP
+- [ ] Profile memory at n=20 (1M rows) and n=25 (32M rows)
+
+**Phase 4 — Integration**
+- [ ] Expose Go engine via HTTP — `POST /evaluate`, `POST /synthesize`
+- [ ] Python core/ calls Go HTTP instead of running Python evaluator
+- [ ] CLI in Go — `boolcalc` binary, faster startup than Python typer
+- [ ] Update DESIGN.md — Go as compute layer, Python as interface layer
+- [ ] Update pyproject.toml — mark Python core/ as reference implementation
 
 ---
 
@@ -66,6 +84,40 @@
 - [ ] Update benchmark.py — call Go engine for ground truth generation
 - [ ] Update README on master — reflect two-repo architecture
 - [ ] Update PRODUCT.md — reflect Go as the scale path
+
+---
+
+## Variable Increment Test
+
+The core study — how hallucination rate changes as logical complexity increases.
+Each step adds variables, doubling the truth table rows the model must reason over.
+
+- [ ] Extend EXPRESSIONS pool — add 4-variable and 5-variable expressions to benchmark.py
+- [ ] Add `--vars` flag to benchmark.py — generates case pool scoped to n variables
+- [ ] Run tinyllama at n=3 (8 rows) — baseline, already done: 40%
+- [ ] Run tinyllama at n=5 (32 rows) — expect rate to climb
+- [ ] Run tinyllama at n=7 (128 rows) — expect significant degradation
+- [ ] Run tinyllama at n=10 (1024 rows) — upper bound for small model
+- [ ] Repeat matrix for llama3.2:3b once Groq/API credits available
+- [ ] Plot degradation curve — hallucination rate vs variable count, per model
+- [ ] Add `visualise_results.py` chart — line chart, one line per model, x=variables, y=hallucination%
+- [ ] Document inflection point — at what n does each model fall apart completely
+- [ ] Cross-verify: engine generates ground truth at all n, numpy kicks in at n>15
+
+**Expected shape of the curve:**
+```
+hallucination %
+     100 |                              ....llama_tiny
+         |                     .........
+      60 |              .......              ....llama3
+         |        ......            .......
+      20 |  ......            ......
+         |
+       0 +--+------+------+------+------+--→ variables (n)
+          3     5     7    10    15    20
+```
+Bigger models degrade more slowly but the curve never reaches zero.
+That is the finding. That is the paper.
 
 ---
 
