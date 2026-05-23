@@ -7,17 +7,16 @@ name = "boolean-algebra-engine"
 version = "0.1.0"
 description = "Boolean algebra engine — evaluate expressions, generate truth tables, synthesize minimal forms"
 readme = "README.md"
-license = { text = "GPL-3.0-only" }
+license = "GPL-3.0-only"
 requires-python = ">=3.9"
 authors = [
-    { name = "Aditya Shrivastava", email = "adityars.work@gmail.com" }
+    { name = "Aditya Shrivastava", email = "aditya.shrivastava.architect@proton.me" }
 ]
 keywords = ["boolean", "algebra", "logic", "truth-table", "quine-mccluskey", "digital-logic"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: Education",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
