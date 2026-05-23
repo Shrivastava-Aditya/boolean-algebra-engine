@@ -9,3 +9,6 @@ venv/
 *.egg
 .pytest_cache/
 .mypy_cache/
+
+# Benchmark outputs — local only, not committed
+results/
