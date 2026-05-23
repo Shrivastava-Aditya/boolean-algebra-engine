@@ -258,6 +258,41 @@ This is a stronger correctness claim than any probabilistic tool can make.
 
 ---
 
+## The fundamental insight — language is fuzzy, logic is not
+
+LLMs live in the fuzzy part. They predict, approximate, sometimes get it wrong. The engine lives in the math part — same input, same output, every time, no approximation.
+
+Wiring them together gives you the flexibility of language with the correctness of math. The LLM handles what math can't do (understanding English). The engine handles what LLMs can't do (being provably correct). Neither does the other's job.
+
+**The general principle:** wherever you can reduce a problem to discrete computation, offload it from the LLM entirely. Let the LLM do language. Let math do math. Boolean logic is one of those domains — and it's one where "probably correct" is unacceptable.
+
+---
+
+## The engine validates the NL layer — a closed loop
+
+The NL layer is a probabilistic parser. It might misparse "approve if A and B" as `A+B` instead of `A.B`. You can't catch every specific parsing error without knowing original intent. But you can catch a whole class of NL hallucinations:
+
+**If you give the NL layer a logically consistent set of rules in plain English, and its parsed output contains contradictions — the NL layer hallucinated.**
+
+```
+plain English rules (known consistent)
+        ↓
+    NL layer parses
+        ↓
+    engine checks
+        ↓
+contradiction found? → NL layer made a parsing error
+```
+
+This gives you a measurable, automatable accuracy score for the NL layer itself — without requiring human-labeled boolean expressions. You only need to label whether the original natural language rules were consistent or contradictory, which any human can do without knowing boolean algebra. The engine tells you if the NL layer agreed.
+
+The deterministic layer validates the probabilistic layer. They close the loop.
+
+**Why this matters for the benchmark:**
+Generate thousands of synthetic rule sets with known consistency labels. Run them through the NL layer. The engine scores every parse. That is a continuous, automated accuracy benchmark for the NL layer — no manual labeling at scale, no PhD required to interpret the results.
+
+---
+
 ## Hallucination reduction — the measurable claim
 
 Hallucination has two forms. This addresses one of them with precision.

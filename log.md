@@ -310,6 +310,49 @@ Next: test the engine against something real. Find x%. That's the only thing tha
 
 ---
 
+## Session 2
+
+### Prompt: "make it public on github"
+- Repo visibility changed from private to public via `gh repo edit --visibility public --accept-visibility-change-consequences`
+- Install command now works without auth: `pip install git+https://github.com/Shrivastava-Aditya/boolean-algebra-engine-python.git`
+
+### Prompt: "visualisations — complexity vs variables, conflict graph"
+- Created `visualisations.ipynb` — Colab-ready notebook with two cells:
+  - **Complexity vs variables**: XOR chains `A^B^C^...` across n=1–10, plots prime implicant count and eval time vs variable count. Shows 2^n scaling visually.
+  - **Conflict graph**: rules as nodes, networkx graph, red edges for always-conflict pairs, yellow for equivalent pairs. Swap in any rule set.
+- Committed and pushed to master.
+
+### Insight: "Language is fuzzy. Logic is not."
+
+Core principle surfaced during session:
+
+- LLMs live in the fuzzy part — they predict, approximate, sometimes get it wrong
+- The engine lives in the math part — same input, same output, every time, no approximation
+- Wiring them together gives you the flexibility of language with the correctness of math
+
+**The self-referential use case — engine validates the NL layer:**
+
+The NL layer is a probabilistic parser. If you give it a logically consistent set of rules in plain English and its parsed output contains contradictions — the NL layer hallucinated.
+
+```
+plain English rules (known consistent)
+        ↓
+    NL layer parses
+        ↓
+    engine checks
+        ↓
+contradiction found? → NL layer made a parsing error
+```
+
+This gives you a measurable, automatable accuracy score for the NL layer itself — without human-labeled boolean expressions. You only need to label whether the original natural language rules were consistent or contradictory, which any human can do. The engine tells you if the NL layer agreed.
+
+The deterministic layer validates the probabilistic layer. They close the loop.
+
+**The general principle:**
+Wherever you can reduce a problem to discrete computation — offload it from the LLM entirely. Let the LLM do language. Let math do math.
+
+---
+
 ## Current State
 
 - Repo: `boolean-algebra-engine-python` (private)
