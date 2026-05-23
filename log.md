@@ -394,6 +394,29 @@ Generate 500 rule sets of 3–7 rules each. Compute ground truth with the engine
 
 Most hallucination benchmarks require human labeling at scale. This one doesn't. Ground truth is free to generate — the engine computes it. 500 test cases cost nothing. 50,000 cost nothing. That's what makes this benchmark publishable and reproducible.
 
+### First benchmark run — 2026-05-23
+
+Model: tinyllama (1.1B, CPU, Ollama)
+Cases: 10 (5 conflicting, 5 compatible)
+Tool: benchmark.py, engine as oracle
+
+Results:
+- Hallucination rate: 40%
+- Conflicting pairs: 60% missed (model said "yes, compatible" when they always conflict)
+- Compatible pairs: 20% missed
+- Engine caught: 100% of errors
+
+Failed cases:
+- A.!B  +  A.B+!A.!B   → engine=no,  llm=yes
+- (A+B).(A+C)  +  !A   → engine=yes, llm=no
+- A.B  +  !A+!B         → engine=no,  llm=yes  (De Morgan — always false together)
+- A.B.C  +  !C          → engine=no,  llm=yes
+
+This is symbolic notation, no natural language, no ambiguity.
+The easiest possible version of the test. Rate on real pipelines will be higher.
+
+Next: run at 100 cases with a stronger model. That number is publishable.
+
 ---
 
 ## Current State
