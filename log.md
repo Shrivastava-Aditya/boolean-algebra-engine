@@ -492,6 +492,91 @@ How it can be used (logic layer framing)
 
 ---
 
+---
+
+## Session 3 — 2026-05-23
+
+### Prompt: "what do you think can be a good strategy for distribution of this project?"
+Three audiences, three paths identified:
+- **PyPI** — pip-installable library for Python developers (already had pyproject.toml)
+- **MCP registry** — for Claude/agent builders; highest-leverage given the interception layer direction
+- **Docker + Go binary** — for infrastructure/ops teams; Go binary makes the <10ms latency claim credible
+
+Lead with r/LocalLLaMA once 100-case benchmark is ready. That audience gives the most honest technical feedback.
+
+### Prompt: "which Reddit community?"
+- **r/LocalLLaMA** — best fit for benchmark results (model comparisons, hallucination rates)
+- **r/Python** — for the library/tool angle
+- **r/compsci** — for the algorithm angle (QM, shunting-yard)
+- **r/ClaudeAI** — when `verify_output` MCP tool is built
+
+### Prompt: "make a package then that we can publish"
+- Fixed `pyproject.toml` license format: `{ text = "GPL-3.0-only" }` → `"GPL-3.0-only"` (SPDX string)
+- Removed deprecated `License :: OSI Approved :: GNU General Public License v3 (GPLv3)` classifier
+- Built with `python -m build` — both `.whl` and `.tar.gz` produced cleanly
+- Validated with `twine check dist/*` — both PASSED
+- Confirmed package name `boolean-algebra-engine` available on PyPI
+
+### Prompt: "update the description — disconnected from real purpose"
+Updated `pyproject.toml` description from:
+> "Boolean algebra engine — evaluate expressions, generate truth tables, synthesize minimal forms"
+
+To:
+> "Deterministic logic layer for AI agents — catch logical contradictions in system prompts, rules, and agent reasoning"
+
+### PyPI publish — versions 0.1.0 → 0.1.5
+Multiple iterations due to PyPI immutability (cannot overwrite a published version):
+- **0.1.0** — first publish, original description
+- **0.1.1** — author email updated to `aditya.shrivastava.architect@proton.me`
+- **0.1.2** — description updated to product-focused copy
+- **0.1.3** — README rewritten (product-first), images included
+- **0.1.4** — image URLs fixed to raw GitHub links
+- **0.1.5** — first automated release via GitHub Actions CI/CD
+
+Auth path: `~/.pypirc` written directly with token. Token `Bool-1` scoped to `boolean-algebra-engine` package.
+
+### Prompt: "make a separate branch engine-PyPI"
+- Created branch `engine-PyPI` off `benchmark`
+- All PyPI-related changes (pyproject.toml, README, CI) committed here
+- Pushed to remote
+
+### README rewrite
+Rewrote `README.md` from architecture-first to product-first:
+- Hook: "The logic layer your AI is missing"
+- Problem: fintech loan approval demo (6 rules, 4 people, 4.5ms, 2 compliance violations found)
+- Benchmark: 40% hallucination rate, tinyllama 1B, engine as oracle
+- Use cases across: system prompts, business rules, legal contracts, medical protocols, personal reasoning
+- Images from `images/` directory included
+- Technical details (operators, interfaces, credibility) pushed to bottom
+- Removed: architecture diagram, roadmap
+
+### Prompt: "images not displaying — repo is private"
+`raw.githubusercontent.com` returns 404 for private repos. Immediate fix: point URLs at `engine-PyPI` branch. Long-term fix: host as GitHub release assets once repo goes public.
+
+### Prompt: "can we set branch path in env variable for CI/CD?"
+Created `publish.sh`:
+- Reads `RELEASE_BRANCH` env var, defaults to current git branch
+- Patches image URLs in README using `sed` before build
+- Restores README after build (source file stays clean)
+- Usage: `./publish.sh` or `RELEASE_BRANCH=master ./publish.sh`
+
+### Prompt: "make a CI file for PyPI releases"
+Created `.github/workflows/publish.yml`:
+- Triggers on `v*` tag push
+- Patches image URLs to use git tag (permanent, stable URLs)
+- Builds with `python -m build`
+- Publishes to PyPI via `TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}`
+- Creates GitHub release with dist files attached
+- `PYPI_API_TOKEN` added to repo secrets
+
+### First automated release — v0.1.5
+```
+git tag v0.1.5 && git push origin v0.1.5
+```
+GitHub Actions triggered — build, publish, release created automatically.
+
+---
+
 ## Decisions Made
 
 | Decision | Reason |
