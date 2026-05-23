@@ -30,6 +30,7 @@ import re
 import json
 import random
 import argparse
+import threading
 import urllib.request
 import urllib.error
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -109,7 +110,7 @@ class OllamaProvider(Provider):
         req = urllib.request.Request(
             self.url, data=payload, headers={"Content-Type": "application/json"}
         )
-        with urllib.request.urlopen(req, timeout=60) as resp:
+        with urllib.request.urlopen(req, timeout=120) as resp:
             answer = json.loads(resp.read())["response"].strip().lower()
         return "yes" in answer
 
@@ -138,7 +139,7 @@ class OpenAICompatProvider(Provider):
                 "Authorization": f"Bearer {self.api_key}",
             },
         )
-        with urllib.request.urlopen(req, timeout=60) as resp:
+        with urllib.request.urlopen(req, timeout=120) as resp:
             answer = json.loads(resp.read())["choices"][0]["message"]["content"].strip().lower()
         return "yes" in answer
 
@@ -164,7 +165,7 @@ class AnthropicProvider(Provider):
                 "anthropic-version": "2023-06-01",
             },
         )
-        with urllib.request.urlopen(req, timeout=60) as resp:
+        with urllib.request.urlopen(req, timeout=120) as resp:
             answer = json.loads(resp.read())["content"][0]["text"].strip().lower()
         return "yes" in answer
 
@@ -323,11 +324,18 @@ def _print_config(provider: Provider, cases: list, workers: int):
                          border_style="blue", expand=False))
 
 
-def run_benchmark(provider: Provider, cases: list, workers: int = 8) -> dict:
+def run_benchmark(provider: Provider, cases: list, workers: int = 8,
+                   dashboard=None) -> dict:
     results = []
     total = len(cases)
 
     _print_config(provider, cases, workers)
+
+    if dashboard:
+        n_conflict = sum(1 for _, _, gt in cases if not gt)
+        n_compat   = sum(1 for _, _, gt in cases if gt)
+        all_vars   = sorted(set(re.findall(r"[A-D]", " ".join(e1 + e2 for e1, e2, _ in cases))))
+        dashboard.push_config(provider.name, total, n_conflict, n_compat, all_vars, min(workers, total))
 
     def run_case(case):
         e1, e2, ground_truth = case
@@ -341,7 +349,13 @@ def run_benchmark(provider: Provider, cases: list, workers: int = 8) -> dict:
             futures = [executor.submit(run_case, case) for case in cases]
             for future in as_completed(futures):
                 try:
-                    results.append(future.result())
+                    result = future.result()
+                    results.append(result)
+                    if dashboard:
+                        dashboard.push_case(
+                            len(results), result["e1"], result["e2"],
+                            result["ground_truth"], result["llm"], result["correct"],
+                        )
                     live.update(_make_live_table(results, total, provider.name))
                 except Exception as exc:
                     console.print(f"[red]Error:[/red] {exc}")
@@ -359,6 +373,9 @@ def _summarise(model_name: str, results: list) -> dict:
     missed_conflicts = sum(1 for r in conflict_results if not r["correct"])
     missed_compat    = sum(1 for r in compat_results   if not r["correct"])
 
+    if total == 0:
+        console.print("[bold red]No results — all cases failed (model unreachable or wrong name?)[/bold red]")
+        return {}
     rate = wrong_count / total * 100
     colour = "red" if rate > 30 else "yellow" if rate > 15 else "green"
 
@@ -554,6 +571,8 @@ if __name__ == "__main__":
     parser.add_argument("--all", action="store_true",
                         help="Run all configured providers")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--web", action="store_true",
+                        help="Open live dashboard at localhost:8080")
     args = parser.parse_args()
 
     n_each = max(1, args.cases // 2)
@@ -569,16 +588,34 @@ if __name__ == "__main__":
         print("No providers configured. Check API keys or --provider flag.")
         sys.exit(1)
 
+    dashboard = None
+    if args.web:
+        from dashboard import Dashboard
+        dashboard = Dashboard(port=8080)
+        dashboard.start()
+        console.print("[bold blue]Dashboard:[/bold blue] http://localhost:8080")
+        console.print("[dim]On a remote VM, use your public IP: http://<your-ip>:8080[/dim]")
+
     summaries = []
     for provider in providers:
-        summary = run_benchmark(provider, cases, workers=args.workers)
-        save_result(summary)
+        summary = run_benchmark(provider, cases, workers=args.workers, dashboard=dashboard)
+        if summary:
+            save_result(summary)
+            plot_comparison([summary])
+            chart_path = os.path.join("images", "benchmark_results.png")
+            if dashboard:
+                dashboard.push_summary(summary, chart_path)
         summaries.append(summary)
 
-    if len(summaries) > 1:
-        plot_comparison(summaries)
-    elif summaries:
-        # single model — save individual chart
-        plot_comparison(summaries)
+    valid = [s for s in summaries if s]
+    if len(valid) > 1:
+        plot_comparison(valid)
+
+    if dashboard:
+        console.print("\n[dim]Dashboard still running at http://localhost:8080 — press Ctrl+C to exit.[/dim]")
+        try:
+            threading.Event().wait()
+        except KeyboardInterrupt:
+            pass
 
     print("\nDone.")

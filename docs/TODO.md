@@ -4,9 +4,11 @@
 
 ## Immediate
 
-- [ ] Run benchmark at 100 cases (currently 10 — not statistically significant)
-- [ ] Run benchmark against llama3.2:3b (next model up from tinyllama)
-- [ ] Add Groq free tier provider to benchmark (faster than CPU Ollama)
+- [x] Run benchmark against llama3.2:3b — done (50% hallucination rate)
+- [x] Run benchmark against gemma3:4b — done (36.4% hallucination rate, partial — timeouts)
+- [x] Add live web dashboard (`--web` flag, localhost:8080) — done
+- [ ] Run benchmark at 100 cases (not statistically significant yet)
+- [ ] Add Groq free tier provider to benchmark (faster than CPU Ollama, solves timeout issue)
 - [ ] Get API credits and run against GPT-4o — that number is the one that matters
 - [ ] Merge `product-readme` into master once reviewed
 - [ ] Merge `benchmark` into master once reviewed
@@ -15,13 +17,15 @@
 
 ## Benchmark (Python)
 
+- [x] Concurrent execution — ThreadPoolExecutor, `--workers` flag
+- [x] Results persistence — `results/{provider}/{model}/{timestamp}.json`
+- [x] Live web dashboard — `--web` flag, SSE streaming, opens localhost:8080
+- [x] Z3 ground truth verification — cross-validates engine before LLM calls
+- [ ] Groq provider — free tier, fast, solves local VM timeout problem
 - [ ] Batching — pack N cases into one prompt, parse structured response
-- [ ] Async parallel calls — fire all cases simultaneously, collect via asyncio
-- [ ] Results persistence — save to `results/{model}/{timestamp}.json`
 - [ ] Multi-model runner — one command, all models, one report
 - [ ] Variable count matrix — run each model at 3, 5, 10, 15 variables
 - [ ] Auto-generate comparison table as markdown after each run
-- [ ] Provider abstraction — `BenchmarkProvider` ABC mirroring NL layer
 
 ---
 
