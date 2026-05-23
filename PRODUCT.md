@@ -316,15 +316,46 @@ That claim is strong, narrow, and provable. Not "reduces hallucination" — too 
 too oversold. Specifically: if the AI's output contains a logical contradiction, this
 catches it. Every time. Mathematically.
 
-**How you measure x%:**
-1. Take a corpus of agent outputs or model decisions from a real pipeline
-2. Run every output through the logic layer
-3. Count how many contained logical contradictions the model did not self-catch
-4. That percentage is x%
+**How you measure x% — the experiment**
 
-The number varies by domain. Agent pipelines with 5+ rules and nested conditions show
-higher rates. Simple Q&A shows lower. But the measurement is real, reproducible, and
-auditable — not a benchmark on someone else's dataset. Your pipeline. Your rules. Your number.
+Two problems, solved in order.
+
+*Step 1 — Prove hallucination exists*
+
+The engine is the oracle. Ground truth is free — computed by exhaustive enumeration, not guessed by a human labeler.
+
+1. Generate rule sets where the correct logical answer is known — computed by the engine
+2. Ask an LLM the same question over those rules
+3. Compare LLM answer vs engine answer
+4. Every disagreement is a provable hallucination
+
+If the engine says `A.!A` is a contradiction and the LLM says it's satisfiable — the LLM is wrong. Provably. No ambiguity, no interpretation.
+
+*Step 2 — Measure the decrement*
+
+```
+Without layer:  LLM output → user              → X% contain logical contradictions
+With layer:     LLM output → engine checks      → contradictions intercepted → user sees 0%
+```
+
+The decrement is X% for the class of errors the engine catches. Binary — it either catches it or it doesn't.
+
+*The concrete experiment*
+
+Generate 500 rule sets of 3–7 rules each. Compute ground truth with the engine. Ask an LLM a question requiring all rules to be held simultaneously. Count disagreements — that is baseline X%. Run the same 500 with the logic layer intercepting. Count what reaches the output. That is the reduction number. Publish it.
+
+*What's provable vs not*
+
+| Claim | Provable? |
+|---|---|
+| LLMs produce logically contradictory outputs | Yes — engine is oracle |
+| Engine catches 100% of those contradictions | Yes — exhaustive enumeration |
+| Hallucination reduced by X% | Yes — scoped to logical contradictions only |
+| Factual hallucination reduced | No — out of scope, never claim it |
+
+*The structural advantage*
+
+Most hallucination benchmarks require human labeling at scale. This one doesn't. Ground truth is free to generate — the engine computes it. 500 test cases cost nothing. 50,000 cost nothing. That's what makes this benchmark reproducible, auditable, and publishable — and why nobody else can make the same claim with the same methodology.
 
 **The headline:**
 > "In agent pipelines with 5+ conditional rules, x% of outputs contain at least one

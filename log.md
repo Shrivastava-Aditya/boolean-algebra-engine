@@ -351,6 +351,49 @@ The deterministic layer validates the probabilistic layer. They close the loop.
 **The general principle:**
 Wherever you can reduce a problem to discrete computation — offload it from the LLM entirely. Let the LLM do language. Let math do math.
 
+### Insight: Proving and measuring hallucination reduction — the experiment design
+
+Two separate problems, solved in order.
+
+**Step 1 — Prove hallucination exists**
+
+The engine is the oracle. You don't need human labelers.
+
+1. Generate rule sets where the correct answer is computed by the engine — not guessed
+2. Ask an LLM the same question over those rules
+3. Compare LLM answer vs engine answer
+4. Every disagreement is a provable hallucination
+
+If the engine says `A.!A` is a contradiction and the LLM says it's satisfiable — the LLM is wrong. Provably. No ambiguity.
+
+**Step 2 — Measure the decrement**
+
+Baseline first. Then wire the layer in.
+
+```
+Without layer:  LLM output → user              → X% contain logical contradictions
+With layer:     LLM output → engine checks      → contradictions intercepted → user sees 0%
+```
+
+The decrement is X% — the full baseline rate — for the class of errors the engine catches. Binary. Either it catches it or it doesn't.
+
+**The experiment**
+
+Generate 500 rule sets of 3–7 rules each. Compute ground truth with the engine. Ask an LLM a question requiring all rules simultaneously. Count disagreements with engine — that's baseline X%. Run same 500 with logic layer intercepting. Count what reaches output. That's the reduction number. Publish it.
+
+**What's provable vs not**
+
+| Claim | Provable? |
+|---|---|
+| LLMs produce logically contradictory outputs | Yes — engine is oracle |
+| Engine catches 100% of those contradictions | Yes — exhaustive enumeration |
+| Hallucination reduced by X% | Yes — scoped to logical contradictions only |
+| Factual hallucination reduced | No — out of scope, don't claim it |
+
+**The structural advantage**
+
+Most hallucination benchmarks require human labeling at scale. This one doesn't. Ground truth is free to generate — the engine computes it. 500 test cases cost nothing. 50,000 cost nothing. That's what makes this benchmark publishable and reproducible.
+
 ---
 
 ## Current State
