@@ -190,7 +190,7 @@ if __name__ == "__main__":
     ax2.axis("off")
 
     plt.tight_layout()
-    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "benchmark_results.png")
+    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images", "benchmark_results.png")
     plt.savefig(out, dpi=140, bbox_inches="tight", facecolor="#0d1117")
     plt.close()
     print(f"\nPlot saved: {out}")
