@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "boolean-algebra-engine"
-version = "0.1.0"
+version = "0.1.1"
 description = "Boolean algebra engine — evaluate expressions, generate truth tables, synthesize minimal forms"
 readme = "README.md"
 license = "GPL-3.0-only"
