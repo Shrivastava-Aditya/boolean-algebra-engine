@@ -17,25 +17,27 @@ Six rules. Three variables. Written by four people over six months.
 A fintech AI agent auto-approves or rejects loan applications based on these rules — nobody ever verified them together. The engine checks all 8 input combinations for every rule, in every combination:
 
 ```python
+# pip install boolean-algebra-engine[mcp]
 from mcp_server.server import check_prompt_logic
 
 result = check_prompt_logic([
-    "A.B",    # approve: good credit AND income verified
-    "C",      # approve: collateral exists
-    "!A",     # reject:  bad credit
-    "!B.!C",  # reject:  no income AND no collateral
-    "A.B.C",  # approve: good credit AND income AND collateral
-    "!B",     # block:   income unverified
+    "A.B",  # approve: good credit AND income verified
+    "!A",   # reject:  bad credit
+    "C",    # approve: collateral exists
+    "!C",   # reject:  no collateral
 ])
 
 print(result["summary"])
-# {'total': 6, 'contradictions': 0, 'tautologies': 0,
-#  'conflicting_pairs': 2, 'redundant': 1}
+# {'total': 4, 'contradictions': 0, 'tautologies': 0,
+#  'equivalent_pairs': 0, 'conflicting_pairs': 2}
+
+print([(p["rule1"], p["rule2"]) for p in result["pairwise"] if p["always_conflict"]])
+# [('A.B', '!A'), ('C', '!C')]
 ```
 
-**What it found in 4.5ms:**
-- Rule 2 (`C`) and Rule 3 (`!A`) conflict — an applicant with bad credit but collateral triggers both approve and reject simultaneously. The agent picks a winner arbitrarily. That is a compliance violation.
-- Rule 5 (`A.B.C`) is dead — anyone satisfying it already satisfies Rule 1 or Rule 2. It can be deleted.
+**What it found:**
+- `A.B` and `!A` conflict — good credit approval and bad credit rejection fire simultaneously when `A=1`. The agent picks a winner arbitrarily.
+- `C` and `!C` conflict — collateral approval and no-collateral rejection are mutually exclusive by definition. Both rules can never apply at the same time.
 
 Nobody caught these by reading the rules. The engine caught them by checking every combination.
 
@@ -190,9 +192,12 @@ print(table.satisfiable)  # True
 minimal, _ = synthesize(table)
 print(minimal)            # A.C+A.B
 
-# Verification
-from core.evaluator import are_equivalent, check_satisfiable
-print(are_equivalent("A.(B+C)", "A.B+A.C"))  # True — distributive law
+# Equivalence and satisfiability (via MCP server functions — no HTTP, direct call)
+# pip install boolean-algebra-engine[mcp]
+from mcp_server.server import equivalent, satisfiable
+
+print(equivalent("A.(B+C)", "A.B+A.C")["equivalent"])  # True — distributive law
+print(satisfiable("A.!A")["satisfiable"])               # False — contradiction
 ```
 
 `core/` has zero external dependencies. Import it into any Python project.
