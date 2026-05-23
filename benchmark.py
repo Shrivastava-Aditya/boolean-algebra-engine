@@ -2,31 +2,59 @@
 """
 benchmark.py — Measure LLM logical hallucination rate against engine ground truth.
 
-Generates 50 rule pairs (25 conflicting, 25 compatible), asks an LLM whether
-both rules can be satisfied simultaneously, compares to engine answer.
+The engine is the oracle — exhaustive enumeration, provably correct.
+Every LLM disagreement is a measurable, unambiguous hallucination.
 
-The engine is the oracle — exhaustive enumeration, no guessing.
-Every LLM disagreement is a provable logical hallucination.
+Supported providers:
+  Ollama   — local, free, no key needed   (tinyllama, llama3.2:3b, mistral)
+  Groq     — free tier, fast              (llama-3.1-8b-instant, llama-3.3-70b-versatile)
+  OpenAI   — gpt-4o-mini, gpt-4o
+  Anthropic — claude-haiku-4-5, claude-sonnet-4-6
 
-Runs against Ollama locally — no API key, no cost.
-Start Ollama:  systemctl start ollama  (or: ollama serve)
-Pull model:    ollama pull llama3.2:3b
+Usage:
+  # single model
+  python3 benchmark.py --provider ollama --model llama3.2:3b --cases 100
+
+  # multi-model run (comma-separated, same provider)
+  python3 benchmark.py --provider groq --model "llama-3.1-8b-instant,llama-3.3-70b-versatile" --cases 100
+
+  # all configured providers at once
+  python3 benchmark.py --all --cases 100
+
+Results saved to results/{provider}/{model}/{timestamp}.json
 """
+
 import sys
-import random
-import urllib.request
-import json
 import os
+import re
+import json
+import random
+import argparse
+import urllib.request
+import urllib.error
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timezone
+from abc import ABC, abstractmethod
+
+from rich.console import Console
+from rich.live import Live
+from rich.table import Table
+from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn, SpinnerColumn  # kept for future use
+from rich.panel import Panel
+from rich.text import Text
+from rich import box
+
+console = Console()
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
 from core.evaluator import evaluate
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL = "tinyllama"
+# ---------------------------------------------------------------------------
+# Expression pool — used to generate test cases
+# ---------------------------------------------------------------------------
 
 EXPRESSIONS = [
-    "A", "B", "C", "!A", "!B", "!C",
+    "A", "B", "C", "D", "!A", "!B", "!C",
     "A.B", "A+B", "A.!B", "!A.B", "!A.!B",
     "A.B.C", "A+B+C", "A.B+C", "A.(B+C)",
     "!A+B", "A+!B", "!A.!B+A.B",
@@ -35,10 +63,117 @@ EXPRESSIONS = [
     "(A+B).(A+C)",
     "!A+!B", "A.B+!A.!B",
     "A^B", "!(A.B)",
+    "A.B+C.D", "A+B.C.D", "!A.!B.!C",
+    "(A+B).(C+D)", "A.!B+!A.B",
+    "A.B.!C", "!A+B.C",
 ]
 
+PROMPT_TEMPLATE = """\
+Boolean logic question. Operators: . = AND,  + = OR,  ! = NOT,  ^ = XOR
 
-def can_both_be_true(e1, e2):
+Rule 1: {e1}
+Rule 2: {e2}
+
+Can both rules be satisfied simultaneously — is there any input where both are true?
+Answer with only the single word 'yes' or 'no'. No explanation."""
+
+
+# ---------------------------------------------------------------------------
+# Providers
+# ---------------------------------------------------------------------------
+
+class Provider(ABC):
+    name: str
+
+    @abstractmethod
+    def ask(self, prompt: str) -> bool:
+        """Return True if LLM says 'yes', False if 'no'."""
+
+    def __str__(self):
+        return self.name
+
+
+class OllamaProvider(Provider):
+    def __init__(self, model: str, url: str = "http://localhost:11434/api/generate"):
+        self.model = model
+        self.url = url
+        self.name = f"ollama/{model}"
+
+    def ask(self, prompt: str) -> bool:
+        payload = json.dumps({
+            "model": self.model,
+            "prompt": prompt,
+            "stream": False,
+            "options": {"temperature": 0, "num_predict": 5},
+        }).encode()
+        req = urllib.request.Request(
+            self.url, data=payload, headers={"Content-Type": "application/json"}
+        )
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            answer = json.loads(resp.read())["response"].strip().lower()
+        return "yes" in answer
+
+
+class OpenAICompatProvider(Provider):
+    """Covers OpenAI and any OpenAI-compatible endpoint (Groq, Together, etc.)."""
+    def __init__(self, model: str, api_key: str, base_url: str = "https://api.openai.com/v1",
+                 provider_name: str = "openai"):
+        self.model = model
+        self.api_key = api_key
+        self.base_url = base_url.rstrip("/")
+        self.name = f"{provider_name}/{model}"
+
+    def ask(self, prompt: str) -> bool:
+        payload = json.dumps({
+            "model": self.model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0,
+            "max_tokens": 5,
+        }).encode()
+        req = urllib.request.Request(
+            f"{self.base_url}/chat/completions",
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.api_key}",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            answer = json.loads(resp.read())["choices"][0]["message"]["content"].strip().lower()
+        return "yes" in answer
+
+
+class AnthropicProvider(Provider):
+    def __init__(self, model: str, api_key: str):
+        self.model = model
+        self.api_key = api_key
+        self.name = f"anthropic/{model}"
+
+    def ask(self, prompt: str) -> bool:
+        payload = json.dumps({
+            "model": self.model,
+            "max_tokens": 5,
+            "messages": [{"role": "user", "content": prompt}],
+        }).encode()
+        req = urllib.request.Request(
+            "https://api.anthropic.com/v1/messages",
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "x-api-key": self.api_key,
+                "anthropic-version": "2023-06-01",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            answer = json.loads(resp.read())["content"][0]["text"].strip().lower()
+        return "yes" in answer
+
+
+# ---------------------------------------------------------------------------
+# Case generation
+# ---------------------------------------------------------------------------
+
+def can_both_be_true(e1: str, e2: str):
     try:
         table, _ = evaluate(f"({e1}).({e2})")
         return table.satisfiable
@@ -46,7 +181,7 @@ def can_both_be_true(e1, e2):
         return None
 
 
-def generate_cases(n_each=25, seed=42):
+def generate_cases(n_each: int = 50, seed: int = 42):
     random.seed(seed)
     conflicts, compatibles = [], []
     tried = set()
@@ -70,49 +205,94 @@ def generate_cases(n_each=25, seed=42):
     return cases
 
 
-def ask_llm(e1, e2):
-    prompt = (
-        "Boolean logic question. Operators: . = AND,  + = OR,  ! = NOT,  ^ = XOR\n"
-        f"Rule 1: {e1}\n"
-        f"Rule 2: {e2}\n"
-        "Can both rules be satisfied simultaneously?\n"
-        "Answer only the single word 'yes' or 'no'."
+# ---------------------------------------------------------------------------
+# Runner
+# ---------------------------------------------------------------------------
+
+def _case_vars(e1: str, e2: str) -> str:
+    return " ".join(sorted(set(re.findall(r"[A-D]", e1 + e2))))
+
+
+def _make_live_table(results: list, total: int, model_name: str) -> Table:
+    done = len(results)
+    correct = sum(r["correct"] for r in results)
+    wrong = done - correct
+    rate = wrong / done * 100 if done else 0.0
+
+    colour = "red" if rate > 30 else "yellow" if rate > 15 else "green"
+
+    pending = total - done
+    title = (
+        f"[bold]{model_name}[/bold]  —  "
+        f"{done}/{total} cases  |  "
+        f"[{colour}]{rate:.1f}% hallucination rate[/{colour}]"
+        + (f"  |  [dim]{pending} pending[/dim]" if pending else "")
     )
-    payload = json.dumps({
-        "model": MODEL,
-        "prompt": prompt,
-        "stream": False,
-        "options": {"temperature": 0, "num_predict": 5}
-    }).encode()
 
-    req = urllib.request.Request(OLLAMA_URL, data=payload, headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        answer = json.loads(resp.read())["response"].strip().lower()
-    return "yes" in answer
+    table = Table(title=title, box=box.SIMPLE_HEAVY, show_lines=False, expand=True)
+    table.add_column("#",      style="dim",    width=4,  justify="right")
+    table.add_column("",                       width=2)
+    table.add_column("Rule 1", style="cyan",   no_wrap=True)
+    table.add_column("Rule 2", style="cyan",   no_wrap=True)
+    table.add_column("vars",   style="dim",    width=8)
+    table.add_column("engine",                 width=7,  justify="center")
+    table.add_column("llm",                    width=5,  justify="center")
+
+    for i, r in enumerate(results[-30:], start=max(1, done - 29)):
+        mark      = "[green]✓[/green]" if r["correct"] else "[red]✗[/red]"
+        engine_val = "yes" if r["ground_truth"] else "no"
+        llm_val   = "yes" if r["llm"] else "no"
+        llm_col   = llm_val if r["correct"] else f"[red]{llm_val}[/red]"
+        vars_used = _case_vars(r["e1"], r["e2"])
+        table.add_row(str(i), mark, r["e1"], r["e2"], vars_used, engine_val, llm_col)
+
+    return table
 
 
-if __name__ == "__main__":
-    n = 5
-    print(f"Generating {n*2} test cases ({n} conflicting, {n} compatible)...")
-    cases = generate_cases(n_each=n)
+def _print_config(provider: Provider, cases: list, workers: int):
+    n_conflict = sum(1 for _, _, gt in cases if not gt)
+    n_compat   = sum(1 for _, _, gt in cases if gt)
+    all_vars   = sorted(set(re.findall(r"[A-D]", " ".join(e1 + e2 for e1, e2, _ in cases))))
 
-    print(f"Testing against {MODEL} via Ollama (CPU)...\n")
-    print(f"{'#':>3}  {'':1}  {'Rule 1':<22}  {'Rule 2':<22}  {'engine':<7}  llm")
-    print("-" * 70)
+    grid = Table.grid(padding=(0, 2))
+    grid.add_column(style="bold dim", no_wrap=True)
+    grid.add_column()
+    grid.add_row("Model",        provider.name)
+    grid.add_row("Cases",        f"{len(cases)}  ({n_conflict} conflict · {n_compat} compatible)")
+    grid.add_row("Variables",    f"{len(all_vars)}  ({', '.join(all_vars)})")
+    grid.add_row("Temperature",  "0  (deterministic)")
+    grid.add_row("Max tokens",   "5  (yes/no answer only)")
+    grid.add_row("Workers",      f"{min(workers, len(cases))} parallel inference calls")
+    console.print(Panel(grid, title="[bold]Benchmark[/bold]", expand=False))
 
+
+def run_benchmark(provider: Provider, cases: list, workers: int = 8) -> dict:
     results = []
-    for i, (e1, e2, ground_truth) in enumerate(cases):
-        llm_answer = ask_llm(e1, e2)
-        correct = llm_answer == ground_truth
-        results.append({
-            "e1": e1, "e2": e2,
-            "ground_truth": ground_truth,
-            "llm": llm_answer,
-            "correct": correct,
-        })
-        mark = "✓" if correct else "✗"
-        print(f"{i+1:>3}  {mark}  {e1:<22}  {e2:<22}  {'yes' if ground_truth else 'no':<7}  {'yes' if llm_answer else 'no'}")
+    total = len(cases)
 
+    _print_config(provider, cases, workers)
+
+    def run_case(case):
+        e1, e2, ground_truth = case
+        llm_answer = provider.ask(PROMPT_TEMPLATE.format(e1=e1, e2=e2))
+        return {"e1": e1, "e2": e2, "ground_truth": ground_truth,
+                "llm": llm_answer, "correct": llm_answer == ground_truth}
+
+    with Live(console=console, refresh_per_second=4, vertical_overflow="visible") as live:
+        live.update(_make_live_table([], total, provider.name))
+        with ThreadPoolExecutor(max_workers=min(workers, total)) as executor:
+            futures = [executor.submit(run_case, case) for case in cases]
+            for future in as_completed(futures):
+                try:
+                    results.append(future.result())
+                    live.update(_make_live_table(results, total, provider.name))
+                except Exception as exc:
+                    console.print(f"[red]Error:[/red] {exc}")
+
+    return _summarise(provider.name, results)
+
+
+def _summarise(model_name: str, results: list) -> dict:
     total = len(results)
     correct_count = sum(r["correct"] for r in results)
     wrong_count = total - correct_count
@@ -122,75 +302,222 @@ if __name__ == "__main__":
     missed_conflicts = sum(1 for r in conflict_results if not r["correct"])
     missed_compat    = sum(1 for r in compat_results   if not r["correct"])
 
-    print("\n" + "=" * 70)
-    print(f"Model:                 {MODEL} (Ollama, CPU)")
-    print(f"Total cases:           {total}")
-    print(f"Correct:               {correct_count}")
-    print(f"Wrong (hallucinated):  {wrong_count}")
-    print(f"Hallucination rate:    {wrong_count / total * 100:.1f}%")
-    print("=" * 70)
-    print(f"Conflicting pairs:     {len(conflict_results) - missed_conflicts}/{len(conflict_results)} correct  "
-          f"({missed_conflicts / len(conflict_results) * 100:.1f}% missed)")
-    print(f"Compatible pairs:      {len(compat_results) - missed_compat}/{len(compat_results)} correct  "
-          f"({missed_compat / len(compat_results) * 100:.1f}% missed)")
-    print("=" * 70)
+    rate = wrong_count / total * 100
+    colour = "red" if rate > 30 else "yellow" if rate > 15 else "green"
+
+    all_vars = sorted(set(re.findall(r"[A-D]", " ".join(r["e1"] + r["e2"] for r in results))))
+
+    summary_text = (
+        f"[bold]Model:[/bold]               {model_name}\n"
+        f"[bold]Total cases:[/bold]         {total}  "
+        f"({len(conflict_results)} conflict · {len(compat_results)} compatible)\n"
+        f"[bold]Variables:[/bold]           {len(all_vars)}  ({', '.join(all_vars)})\n"
+        f"[bold]Temperature:[/bold]         0  (deterministic)\n"
+        f"[bold]Max tokens:[/bold]          5\n"
+        f"[bold]Correct:[/bold]             {correct_count}\n"
+        f"[bold]Hallucinated:[/bold]        {wrong_count}\n"
+        f"[bold]Hallucination rate:[/bold]  [{colour}]{rate:.1f}%[/{colour}]\n"
+    )
+    if conflict_results:
+        summary_text += (f"[bold]Missed conflicts:[/bold]    "
+                         f"{missed_conflicts}/{len(conflict_results)}  "
+                         f"({missed_conflicts / len(conflict_results) * 100:.1f}%)\n")
+    if compat_results:
+        summary_text += (f"[bold]Missed compatibles:[/bold]  "
+                         f"{missed_compat}/{len(compat_results)}  "
+                         f"({missed_compat / len(compat_results) * 100:.1f}%)\n")
+
+    console.print(Panel(summary_text.strip(), title=f"[bold]Results — {model_name}[/bold]", expand=False))
 
     if wrong_count:
-        print(f"\nFailed cases:")
+        console.print("\n[bold red]Failed cases:[/bold red]")
         for r in results:
             if not r["correct"]:
-                print(f"  {r['e1']:<22} + {r['e2']:<22}  engine={'yes' if r['ground_truth'] else 'no'}  llm={'yes' if r['llm'] else 'no'}")
+                console.print(
+                    f"  [cyan]{r['e1']:<24}[/cyan] + [cyan]{r['e2']:<24}[/cyan]  "
+                    f"engine={'yes' if r['ground_truth'] else 'no'}  "
+                    f"[red]llm={'yes' if r['llm'] else 'no'}[/red]"
+                )
 
-    # --- Visualisation ---
+    return {
+        "model": model_name,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "total": total,
+        "correct": correct_count,
+        "hallucinated": wrong_count,
+        "hallucination_rate": round(wrong_count / total * 100, 1),
+        "missed_conflicts": missed_conflicts,
+        "missed_compat": missed_compat,
+        "results": results,
+    }
+
+
+def save_result(summary: dict):
+    provider, model = summary["model"].split("/", 1)
+    safe_model = model.replace(":", "-").replace("/", "-")
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    path = os.path.join("results", provider, safe_model)
+    os.makedirs(path, exist_ok=True)
+    filename = os.path.join(path, f"{ts}.json")
+    with open(filename, "w") as f:
+        json.dump(summary, f, indent=2)
+    print(f"Results saved: {filename}")
+    return filename
+
+
+# ---------------------------------------------------------------------------
+# Visualisation
+# ---------------------------------------------------------------------------
+
+def plot_comparison(summaries: list):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     import numpy as np
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5))
+    models = [s["model"] for s in summaries]
+    rates  = [s["hallucination_rate"] for s in summaries]
+    missed_c = [s["missed_conflicts"] / max(s["total"] // 2, 1) * 100 for s in summaries]
+    missed_p = [s["missed_compat"]    / max(s["total"] // 2, 1) * 100 for s in summaries]
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
     fig.patch.set_facecolor("#0d1117")
 
-    # Left: summary bar chart
-    ax1.set_facecolor("#0d1117")
-    categories = ["All cases", "Conflicting pairs", "Compatible pairs"]
-    correct_vals = [
-        correct_count,
-        len(conflict_results) - missed_conflicts,
-        len(compat_results) - missed_compat,
-    ]
-    wrong_vals = [wrong_count, missed_conflicts, missed_compat]
-    totals = [total, len(conflict_results), len(compat_results)]
-    x = np.arange(len(categories))
-    w = 0.35
-    ax1.bar(x - w/2, correct_vals, w, label="Correct", color="#3fb950")
-    ax1.bar(x + w/2, wrong_vals,   w, label="Hallucinated", color="#f85149")
-    for i, (c, wr, t) in enumerate(zip(correct_vals, wrong_vals, totals)):
-        ax1.text(i - w/2, c + 0.05, f"{c}/{t}", ha="center", color="#e6edf3", fontsize=9)
-        ax1.text(i + w/2, wr + 0.05, f"{wr}/{t}", ha="center", color="#e6edf3", fontsize=9)
-    ax1.set_xticks(x)
-    ax1.set_xticklabels(categories, color="#e6edf3", fontsize=10)
-    ax1.set_ylabel("Cases", color="#e6edf3")
-    ax1.set_title(f"Hallucination rate: {wrong_count/total*100:.0f}%  |  Model: {MODEL}", color="#e6edf3", fontsize=11)
-    ax1.tick_params(colors="#e6edf3")
-    ax1.spines[:].set_edgecolor("#30363d")
-    ax1.legend(facecolor="#161b22", labelcolor="#e6edf3")
+    colors = ["#f85149" if r > 30 else "#e3b341" if r > 15 else "#3fb950" for r in rates]
 
-    # Right: case-by-case grid
+    # Left — overall hallucination rate per model
+    ax = axes[0]
+    ax.set_facecolor("#0d1117")
+    bars = ax.barh(models, rates, color=colors)
+    ax.set_xlabel("Hallucination rate (%)", color="#e6edf3")
+    ax.set_title("Overall hallucination rate by model", color="#e6edf3", fontsize=12)
+    ax.tick_params(colors="#e6edf3")
+    ax.spines[:].set_edgecolor("#30363d")
+    ax.axvline(0, color="#30363d")
+    for bar, rate in zip(bars, rates):
+        ax.text(bar.get_width() + 0.5, bar.get_y() + bar.get_height() / 2,
+                f"{rate:.1f}%", va="center", color="#e6edf3", fontsize=9)
+    ax.set_xlim(0, max(rates + [10]) * 1.2)
+
+    # Right — conflict vs compatible miss rate
+    ax2 = axes[1]
     ax2.set_facecolor("#0d1117")
-    ax2.set_title("Case-by-case results", color="#e6edf3", fontsize=11)
-    for i, r in enumerate(results):
-        y = len(results) - 1 - i
-        color = "#3fb950" if r["correct"] else "#f85149"
-        label = f"{r['e1']}  +  {r['e2']}"
-        verdict = "✓" if r["correct"] else f"✗  (llm={'yes' if r['llm'] else 'no'}, engine={'yes' if r['ground_truth'] else 'no'})"
-        ax2.text(0.02, y, label, color="#e6edf3", fontsize=8, va="center", transform=ax2.transData)
-        ax2.text(0.98, y, verdict, color=color, fontsize=8, va="center", ha="right", transform=ax2.transData)
-    ax2.set_xlim(0, 1)
-    ax2.set_ylim(-0.5, len(results) - 0.5)
-    ax2.axis("off")
+    x = np.arange(len(models))
+    w = 0.35
+    ax2.bar(x - w/2, missed_c, w, label="Missed conflicts", color="#f85149", alpha=0.85)
+    ax2.bar(x + w/2, missed_p, w, label="Missed compatibles", color="#388bfd", alpha=0.85)
+    ax2.set_xticks(x)
+    ax2.set_xticklabels(models, rotation=20, ha="right", color="#e6edf3", fontsize=8)
+    ax2.set_ylabel("Miss rate (%)", color="#e6edf3")
+    ax2.set_title("Miss rate by type", color="#e6edf3", fontsize=12)
+    ax2.tick_params(colors="#e6edf3")
+    ax2.spines[:].set_edgecolor("#30363d")
+    ax2.legend(facecolor="#161b22", labelcolor="#e6edf3")
 
     plt.tight_layout()
-    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images", "benchmark_results.png")
+    out = os.path.join("images", "benchmark_results.png")
+    os.makedirs("images", exist_ok=True)
     plt.savefig(out, dpi=140, bbox_inches="tight", facecolor="#0d1117")
     plt.close()
-    print(f"\nPlot saved: {out}")
+    print(f"\nComparison chart saved: {out}")
+
+
+# ---------------------------------------------------------------------------
+# Provider factory
+# ---------------------------------------------------------------------------
+
+def build_providers(args) -> list:
+    providers = []
+
+    if args.provider == "ollama" or args.all:
+        models = args.model.split(",") if args.model and args.provider == "ollama" else ["tinyllama"]
+        if args.all:
+            models = ["tinyllama", "llama3.2:3b"]
+        for m in models:
+            providers.append(OllamaProvider(m.strip()))
+
+    if args.provider == "groq" or args.all:
+        key = os.environ.get("GROQ_API_KEY", "")
+        if not key:
+            print("GROQ_API_KEY not set — skipping Groq.")
+        else:
+            models = args.model.split(",") if args.model and args.provider == "groq" else []
+            if args.all:
+                models = ["llama-3.1-8b-instant", "llama-3.3-70b-versatile"]
+            for m in models:
+                providers.append(OpenAICompatProvider(
+                    model=m.strip(), api_key=key,
+                    base_url="https://api.groq.com/openai/v1",
+                    provider_name="groq"
+                ))
+
+    if args.provider == "openai" or args.all:
+        key = os.environ.get("OPENAI_API_KEY", "")
+        if not key:
+            print("OPENAI_API_KEY not set — skipping OpenAI.")
+        else:
+            models = args.model.split(",") if args.model and args.provider == "openai" else []
+            if args.all:
+                models = ["gpt-4o-mini", "gpt-4o"]
+            for m in models:
+                providers.append(OpenAICompatProvider(
+                    model=m.strip(), api_key=key,
+                    provider_name="openai"
+                ))
+
+    if args.provider == "anthropic" or args.all:
+        key = os.environ.get("ANTHROPIC_API_KEY", "")
+        if not key:
+            print("ANTHROPIC_API_KEY not set — skipping Anthropic.")
+        else:
+            models = args.model.split(",") if args.model and args.provider == "anthropic" else []
+            if args.all:
+                models = ["claude-haiku-4-5-20251001", "claude-sonnet-4-6"]
+            for m in models:
+                providers.append(AnthropicProvider(model=m.strip(), api_key=key))
+
+    return providers
+
+
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="LLM hallucination benchmark")
+    parser.add_argument("--provider", choices=["ollama", "groq", "openai", "anthropic"],
+                        default="ollama")
+    parser.add_argument("--model", default="tinyllama",
+                        help="Model name(s), comma-separated for multi-model runs")
+    parser.add_argument("--cases", type=int, default=100,
+                        help="Total cases per model (split 50/50 conflict/compatible)")
+    parser.add_argument("--workers", type=int, default=8,
+                        help="Parallel workers for concurrent inference calls (default: 8)")
+    parser.add_argument("--all", action="store_true",
+                        help="Run all configured providers")
+    parser.add_argument("--seed", type=int, default=42)
+    args = parser.parse_args()
+
+    n_each = max(1, args.cases // 2)
+    total_cases = n_each * 2
+    print(f"Generating {total_cases} test cases ({n_each} conflicting, {n_each} compatible)...")
+    cases = generate_cases(n_each=n_each, seed=args.seed)
+
+    providers = build_providers(args)
+    if not providers:
+        print("No providers configured. Check API keys or --provider flag.")
+        sys.exit(1)
+
+    summaries = []
+    for provider in providers:
+        summary = run_benchmark(provider, cases, workers=args.workers)
+        save_result(summary)
+        summaries.append(summary)
+
+    if len(summaries) > 1:
+        plot_comparison(summaries)
+    elif summaries:
+        # single model — save individual chart
+        plot_comparison(summaries)
+
+    print("\nDone.")
