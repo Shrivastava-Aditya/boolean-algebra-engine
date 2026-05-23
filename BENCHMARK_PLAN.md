@@ -191,6 +191,55 @@ Run it weekly. Track model improvement (or regression) over time.
 
 ---
 
+## Go implementation — why the benchmark runner belongs in Go
+
+Python's `asyncio` approximates concurrency. Go's goroutines are concurrency.
+
+Each benchmark case is independent — fire an LLM call, wait on IO, collect the result. That is exactly the workload goroutines were designed for. Thousands of concurrent waiting calls with near-zero overhead per goroutine (~2KB stack vs Python thread's ~8MB).
+
+```go
+// Each case is a goroutine. Results flow through a channel.
+results := make(chan Result, len(cases))
+
+for _, c := range cases {
+    go func(c Case) {
+        answer := askLLM(c.E1, c.E2)
+        results <- Result{Case: c, LLM: answer}
+    }(c)
+}
+
+// Collect as they complete — no ordering required
+for range cases {
+    r := <-results
+    compare(r)
+}
+```
+
+No GIL. No asyncio event loop complexity. No thread pool sizing. The runtime schedules goroutines across all cores automatically.
+
+**The component split:**
+
+| Component | Language | Reason |
+|---|---|---|
+| Core engine | Go | Speed, CUDA path, goroutines |
+| Benchmark runner | Go | Native concurrency for LLM calls |
+| CLI / API / MCP | Python | Existing code, ecosystem |
+| NL layer | Python | LLM SDKs are Python-first |
+
+**Expected benchmark run time in Go:**
+
+| Configuration | Python async | Go goroutines |
+|---|---|---|
+| 1 model, 100 cases | ~3 min | ~20s |
+| 4 models, 100 cases, 3 vars | ~10 min | ~90s |
+| 4 models, 100 cases, 3+5+10 vars | ~30 min | ~4 min |
+
+The 4-minute full matrix run is what makes weekly automated benchmarking trivial.
+
+**This is the primary reason `boolean-algebra-engine-go` exists** — not just CUDA for the engine, but goroutines for the benchmark runner. The Go repo will own the benchmark at scale. The Python repo proved the methodology. Go makes it continuous.
+
+---
+
 ## What this produces
 
 A reproducible, continuously-updated hallucination benchmark across:
