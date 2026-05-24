@@ -545,7 +545,9 @@ result[<span class="c-string">"summary"</span>]
   <div class="container">
     <div class="section-label">Benchmark</div>
     <h2>Every model hallucinates on boolean logic.</h2>
-    <p class="lead">We tested 5 models. All of them got logic questions wrong. The pattern tells you why you need a deterministic layer.</p>
+    <p class="lead">We tested 6 models including Llama 4 Scout (just released). All of them got logic questions wrong. The pattern tells you why you need a deterministic layer.</p>
+
+    <img src="images/benchmark_results.png" alt="Benchmark results — hallucination rate by model" style="width:100%;border-radius:8px;border:1px solid var(--border);margin-bottom:32px;">
 
     <div class="table-wrap" style="margin-bottom: 32px;">
       <table>
@@ -571,29 +573,35 @@ result[<span class="c-string">"summary"</span>]
             <td style="color:var(--muted);font-size:0.875rem;">Always answers "no" — not reasoning, picking a default</td>
           </tr>
           <tr>
-            <td><strong>gemma3:4b</strong></td>
-            <td style="color:var(--muted);">4B</td>
-            <td style="color:#888; font-weight:600;">35%</td>
-            <td style="color:var(--muted);font-size:0.875rem;">Reasons per case, wrong 1 in 3</td>
+            <td><strong>llama-4-scout</strong> <span style="font-size:0.7rem;color:#555;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:3px;padding:1px 5px;margin-left:4px;">new</span></td>
+            <td style="color:var(--muted);">17Bx16E</td>
+            <td style="color:var(--red); font-weight:600;">50%</td>
+            <td style="color:var(--muted);font-size:0.875rem;">Always answers "no" — 0% missed conflicts, 100% missed compatibles</td>
           </tr>
           <tr>
-            <td><strong>qwen3-32b</strong></td>
-            <td style="color:var(--muted);">32B</td>
-            <td style="color:#888; font-weight:600;">17%</td>
-            <td style="color:var(--muted);font-size:0.875rem;">Consistent ~17% baseline across all complexity levels</td>
+            <td><strong>gemma3:4b</strong></td>
+            <td style="color:var(--muted);">4B</td>
+            <td style="color:#e06c3a; font-weight:600;">35%</td>
+            <td style="color:var(--muted);font-size:0.875rem;">Reasons per case, wrong 1 in 3</td>
           </tr>
           <tr>
             <td><strong>llama-3.3-70b</strong></td>
             <td style="color:var(--muted);">70B</td>
-            <td style="color:#888; font-weight:600;">20%</td>
+            <td style="color:#e3b341; font-weight:600;">20%</td>
             <td style="color:var(--muted);font-size:0.875rem;">0% missed conflicts, 40% missed compatible pairs — over-cautious</td>
+          </tr>
+          <tr>
+            <td><strong>qwen3-32b</strong></td>
+            <td style="color:var(--muted);">32B</td>
+            <td style="color:var(--green); font-weight:600;">17%</td>
+            <td style="color:var(--muted);font-size:0.875rem;">Consistent ~17% baseline across all complexity levels</td>
           </tr>
         </tbody>
       </table>
     </div>
 
     <div class="callout">
-      <strong>The small models aren't reasoning at all.</strong> The large models reason but still hallucinate at a consistent rate. Complexity doesn't make it worse — qwen3-32b was flat at 16–19% from 3 variables (8 rows) to 10 variables (1,024 rows). The errors are structural, not difficulty-dependent.
+      <strong>Llama 4 Scout scores the same as llama3.2:3b.</strong> Different architecture, different scale, identical failure mode — always says "no". The small models pick a default and stick to it. The large models reason but still hallucinate. The problem isn't model size or recency: LLMs predict tokens, they cannot enumerate 2ⁿ combinations. Only a deterministic layer can.
     </div>
 
     <h3 style="margin-bottom: 16px; margin-top: 40px;">Variable curve — does harder logic make it worse?</h3>
