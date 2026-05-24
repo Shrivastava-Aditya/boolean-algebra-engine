@@ -7,11 +7,11 @@
 - [x] Run benchmark against llama3.2:3b — done (50% hallucination rate)
 - [x] Run benchmark against gemma3:4b — done (36.4% hallucination rate, partial — timeouts)
 - [x] Add live web dashboard (`--web` flag, localhost:8080) — done
-- [ ] Run benchmark at 100 cases (not statistically significant yet)
-- [ ] Add Groq free tier provider to benchmark (faster than CPU Ollama, solves timeout issue)
+- [x] Add Groq provider — done
+- [x] Run llama-3.3-70b and qwen3-32b at 100 cases — done
+- [ ] **[URGENT] Normalize all models to 100 cases** — tinyllama, llama3.2:3b, gemma3:4b were only run at 20 cases (±22% margin of error vs ±10% for the 100-case models). The comparison table is misleading until all models are at the same sample size. Rerun via Ollama locally.
 - [ ] Get API credits and run against GPT-4o — that number is the one that matters
-- [ ] Merge `product-readme` into master once reviewed
-- [ ] Merge `benchmark` into master once reviewed
+- [ ] Merge `engine-PyPI` into master once reviewed
 
 ---
 
