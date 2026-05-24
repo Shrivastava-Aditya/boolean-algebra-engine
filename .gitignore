@@ -12,3 +12,6 @@ venv/
 
 # Benchmark outputs — local only, not committed
 results/
+
+# Internal strategy docs
+docs/PRODUCT_DIRECTION.md
