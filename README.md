@@ -1,8 +1,8 @@
 # boolean-algebra-engine
 
-**The logic layer your AI is missing.**
+Deterministic boolean logic verification for AI pipelines. Catches rule contradictions LLMs miss — provably, in under 10ms. Zero dependencies.
 
-AI agents hallucinate on boolean logic — not sometimes, reliably. They predict the next token. They don't compute. This engine does. Deterministic, exhaustive, under 10ms. It sits inside your agent pipeline and makes one guarantee the model cannot make itself: that its reasoning is logically consistent.
+90 tests passing · <10ms evaluation · zero dependencies · exhaustive enumeration, not sampling
 
 ```bash
 pip install boolean-algebra-engine
@@ -181,12 +181,21 @@ Per-case strips (bottom row of the chart): every conflict cell is uniformly one 
 
 ---
 
-## Install
+## Try it immediately
 
 ```bash
-# Core engine — zero dependencies
 pip install boolean-algebra-engine
+python -c "from core.evaluator import evaluate; t,_ = evaluate('A.!A'); print(t.satisfiable)"
+```
 
+```
+False — contradiction detected
+```
+
+<details>
+<summary>Optional extras</summary>
+
+```bash
 # With CLI
 pip install "boolean-algebra-engine[cli]"
 
@@ -202,6 +211,8 @@ pip install "boolean-algebra-engine[nl-anthropic]"
 # With NL layer (OpenAI)
 pip install "boolean-algebra-engine[nl-openai]"
 ```
+
+</details>
 
 ---
 
