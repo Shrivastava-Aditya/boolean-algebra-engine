@@ -7,7 +7,7 @@ name = "boolean-algebra-engine"
 version = "0.2.1"
 description = "Deterministic logic layer for AI agents — catch logical contradictions in system prompts, rules, and agent reasoning"
 readme = "README.md"
-license = "GPL-3.0-only"
+license = "MIT"
 requires-python = ">=3.10"
 authors = [
     { name = "Aditya Shrivastava", email = "aditya.shrivastava.architect@proton.me" }
@@ -18,7 +18,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Education",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -45,7 +44,7 @@ Repository = "https://github.com/Shrivastava-Aditya/bool-LLM-ngn"
 Issues = "https://github.com/Shrivastava-Aditya/bool-LLM-ngn/issues"
 
 [tool.setuptools.packages.find]
-include = ["core*", "cli*", "mcp_server*", "api*", "nl*"]
+include = ["boolean_algebra_engine*", "core*", "cli*", "mcp_server*", "api*", "nl*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
