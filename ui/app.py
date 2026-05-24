@@ -59,7 +59,7 @@ with st.sidebar:
     st.markdown("## ⚡ Boolean Algebra Engine")
     st.caption("Deterministic logic verification.")
     st.markdown("---")
-    mode = st.radio("Mode", ["Expression", "Rule Auditor", "Plain English (NL)"], index=0)
+    mode = st.radio("Mode", ["Expression", "Rule Auditor", "Plain English (NL)", "Benchmark"], index=0)
     st.markdown("---")
     st.markdown("**Operators**")
     st.markdown("`!` NOT · `.` AND · `^` XOR · `+` OR")
@@ -404,6 +404,160 @@ elif mode == "Plain English (NL)":
                             st.error(f"{e['rule']}: {e['error']}")
                     except Exception as e:
                         st.error(str(e))
+
+
+# ---------------------------------------------------------------------------
+# Mode 4 — Benchmark
+# ---------------------------------------------------------------------------
+
+elif mode == "Benchmark":
+    st.markdown("## LLM Benchmark")
+    st.caption("Measure how accurately LLMs answer boolean logic questions. Every disagreement with the engine is a provable hallucination.")
+
+    col_p, col_m, col_k = st.columns(3)
+
+    with col_p:
+        provider_name = st.selectbox("Provider", ["ollama", "groq", "openai", "anthropic"])
+
+    with col_m:
+        if provider_name == "ollama":
+            try:
+                import urllib.request as _ur, json as _json
+                with _ur.urlopen("http://localhost:11434/api/tags", timeout=2) as _r:
+                    _ollama_models = [m["name"] for m in _json.loads(_r.read()).get("models", [])]
+            except Exception:
+                _ollama_models = ["tinyllama"]
+            model_name = st.selectbox("Model", _ollama_models or ["tinyllama"])
+        else:
+            _defaults = {"groq": "llama-3.1-8b-instant", "openai": "gpt-4o-mini", "anthropic": "claude-haiku-4-5-20251001"}
+            model_name = st.text_input("Model", value=_defaults.get(provider_name, ""))
+
+    with col_k:
+        _env_keys = {"groq": "GROQ_API_KEY", "openai": "OPENAI_API_KEY", "anthropic": "ANTHROPIC_API_KEY"}
+        if provider_name != "ollama":
+            _env_val = os.environ.get(_env_keys.get(provider_name, ""), "")
+            api_key = st.text_input("API Key", value=_env_val, type="password",
+                                    placeholder=f"{_env_keys.get(provider_name, '')} or paste here")
+        else:
+            api_key = ""
+
+    n_cases = st.slider("Test cases", min_value=10, max_value=200, value=20, step=10,
+                        help="Split evenly between conflicting and compatible pairs")
+
+    if st.button("Run Benchmark", type="primary"):
+        import re as _re
+        import urllib.request as _ur2
+        import json as _json2
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from benchmark import (OllamaProvider, OpenAICompatProvider, AnthropicProvider,
+                               generate_cases, PROMPT_TEMPLATE)
+
+        # Build provider
+        _provider_ok = True
+        if provider_name == "ollama":
+            _provider = OllamaProvider(model_name)
+        elif provider_name == "groq":
+            if not api_key:
+                st.error("GROQ_API_KEY required.")
+                _provider_ok = False
+            else:
+                _provider = OpenAICompatProvider(model=model_name, api_key=api_key,
+                                                 base_url="https://api.groq.com/openai/v1",
+                                                 provider_name="groq")
+        elif provider_name == "openai":
+            if not api_key:
+                st.error("OPENAI_API_KEY required.")
+                _provider_ok = False
+            else:
+                _provider = OpenAICompatProvider(model=model_name, api_key=api_key,
+                                                  provider_name="openai")
+        elif provider_name == "anthropic":
+            if not api_key:
+                st.error("ANTHROPIC_API_KEY required.")
+                _provider_ok = False
+            else:
+                _provider = AnthropicProvider(model=model_name, api_key=api_key)
+
+        if _provider_ok:
+            n_each = max(1, n_cases // 2)
+            with st.spinner(f"Generating {n_each * 2} cases..."):
+                _cases = generate_cases(n_each=n_each)
+
+            # Z3 verification
+            try:
+                import z3 as _z3
+                def _z3_check(e1, e2):
+                    _zvars = {v: _z3.Bool(v) for v in sorted(set(_re.findall(r"[A-D]", e1 + e2)))}
+                    def _parse(expr):
+                        e = expr.replace("!", "~").replace(".", "&").replace("+", "|")
+                        return eval(e, {"__builtins__": {}}, _zvars)
+                    s = _z3.Solver()
+                    s.add(_parse(f"({e1})") & _parse(f"({e2})"))
+                    return s.check() == _z3.sat
+                _mismatches = [(e1, e2) for e1, e2, gt in _cases if _z3_check(e1, e2) != gt]
+                if _mismatches:
+                    st.error(f"z3 found {len(_mismatches)} ground truth mismatch(es) — aborting.")
+                    st.stop()
+                st.success(f"z3 verified all {len(_cases)} ground truth labels ✓")
+            except ImportError:
+                st.warning("z3-solver not installed — skipping ground truth verification. `pip install z3-solver` to enable.")
+
+            # Run with live table
+            _results = []
+            _progress = st.progress(0)
+            _status = st.empty()
+            _table_ph = st.empty()
+
+            for _i, (_e1, _e2, _gt) in enumerate(_cases):
+                try:
+                    _llm = _provider.ask(PROMPT_TEMPLATE.format(e1=_e1, e2=_e2))
+                    _ok = _llm == _gt
+                except Exception as _exc:
+                    st.error(f"Case {_i+1} failed: {_exc}")
+                    continue
+
+                _results.append({
+                    "#": _i + 1,
+                    "": "✓" if _ok else "✗",
+                    "Rule 1": _e1,
+                    "Rule 2": _e2,
+                    "engine": "yes" if _gt else "no",
+                    "llm": "yes" if _llm else "no",
+                })
+
+                _done = _i + 1
+                _wrong = sum(1 for r in _results if r[""] == "✗")
+                _rate = _wrong / _done * 100
+                _progress.progress(_done / len(_cases))
+                _status.markdown(f"**{_done}/{len(_cases)}** cases · **{_rate:.1f}%** hallucination rate")
+                _table_ph.dataframe(pd.DataFrame(_results), use_container_width=True, hide_index=True)
+
+            # Summary
+            if _results:
+                st.markdown("---")
+                _total = len(_results)
+                _wrong_final = sum(1 for r in _results if r[""] == "✗")
+                _rate_final = _wrong_final / _total * 100
+                _conflict_rows = [r for r in _results if r["engine"] == "no"]
+                _compat_rows   = [r for r in _results if r["engine"] == "yes"]
+                _missed_c = sum(1 for r in _conflict_rows if r[""] == "✗")
+                _missed_p = sum(1 for r in _compat_rows   if r[""] == "✗")
+
+                mc1, mc2, mc3, mc4, mc5 = st.columns(5)
+                mc1.metric("Total cases", _total)
+                mc2.metric("Correct", _total - _wrong_final)
+                mc3.metric("Hallucinated", _wrong_final)
+                mc4.metric("Hallucination rate", f"{_rate_final:.1f}%")
+                mc5.metric("Missed conflicts", f"{_missed_c}/{len(_conflict_rows)}")
+
+                if _rate_final >= 40:
+                    st.markdown('<div class="conflict-box">⛔ <b>High hallucination rate</b> — this model is not reasoning about boolean logic.</div>', unsafe_allow_html=True)
+                elif _rate_final >= 15:
+                    st.markdown('<div class="warning-box">⚠️ <b>Moderate hallucination rate</b> — model makes significant logic errors.</div>', unsafe_allow_html=True)
+                else:
+                    st.markdown('<div class="ok-box">✅ <b>Low hallucination rate</b> — model handles boolean logic well.</div>', unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------------------
