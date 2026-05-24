@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "boolean-algebra-engine"
-version = "0.2.2"
+version = "0.2.3"
 description = "Deterministic logic layer for AI agents — catch logical contradictions in system prompts, rules, and agent reasoning"
 readme = "README.md"
-license = "MIT"
+license = "AGPL-3.0-only"
 requires-python = ">=3.10"
 authors = [
     { name = "Aditya Shrivastava", email = "aditya.shrivastava.architect@proton.me" }
