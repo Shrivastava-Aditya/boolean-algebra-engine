@@ -69,6 +69,55 @@ EXPRESSIONS = [
     "A.B.!C", "!A+B.C",
 ]
 
+EXPRESSIONS_5VAR = [
+    "A", "B", "C", "D", "E",
+    "!A", "!B", "!C", "!D", "!E",
+    "A.E", "B.E", "C.E", "D.E",
+    "A+E", "B+E", "C+E", "D+E",
+    "A.!E", "!A.E", "B.!E", "!B.E",
+    "A.B.E", "C.D.E", "A+B+E",
+    "A.B+C.E", "A.(B+E)", "C.(D+E)",
+    "!A.!E", "!D.!E",
+    "A^E", "!(A.E)",
+    "A.B.C.D.E", "!A.!B.!C.!D.!E",
+    "(A+B).(D+E)", "A.B+D.E",
+    "!A+B.E", "A+!B.!E",
+]
+
+EXPRESSIONS_7VAR = [
+    "A", "B", "C", "D", "E", "F", "G",
+    "!F", "!G", "A.F", "B.G", "C.F",
+    "A+F", "B+G", "!F.!G",
+    "A.B.F", "C.D.G", "E.F.G",
+    "A.!F", "!A.F", "B.!G", "!B.G",
+    "A.B+F.G", "C.(D+F)", "E.(F+G)",
+    "!A.!F.!G", "(A+F).(B+G)",
+    "A^F", "F.G", "!(F.G)",
+    "A.B.C.F", "D.E.F.G",
+    "!D.!E.!F.!G", "A+B+F+G",
+]
+
+EXPRESSIONS_10VAR = [
+    "A", "B", "C", "D", "E",
+    "!H", "!I", "!J", "H.I", "H.J",
+    "A.H", "B.I", "C.J", "D.H", "E.I",
+    "A+H", "B+I", "C+J",
+    "A.!H", "!A.H", "B.!I", "!B.I",
+    "A.B.H", "C.D.I", "E.F.J",
+    "H.I.J", "!H.!I.!J",
+    "A.B+H.I", "(A+H).(B+I)",
+    "A.H+B.I+C.J", "!(H.I.J)",
+    "A^H", "H+I+J",
+    "A.B.C.H.I", "D.E.F.G.J",
+]
+
+_VAR_POOL = {
+    3: EXPRESSIONS, 4: EXPRESSIONS,
+    5: EXPRESSIONS_5VAR,
+    7: EXPRESSIONS_7VAR,
+    10: EXPRESSIONS_10VAR,
+}
+
 PROMPT_TEMPLATE = """\
 Boolean logic question. Operators: . = AND,  + = OR,  ! = NOT,  ^ = XOR
 
@@ -77,6 +126,8 @@ Rule 2: {e2}
 
 Can both rules be satisfied simultaneously — is there any input where both are true?
 Answer with only the single word 'yes' or 'no'. No explanation."""
+
+PROMPT_TEMPLATE_NO_THINK = "/no_think\n" + PROMPT_TEMPLATE
 
 
 # ---------------------------------------------------------------------------
@@ -137,11 +188,23 @@ class OpenAICompatProvider(Provider):
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.api_key}",
+                "User-Agent": "curl/7.68.0",
             },
         )
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            answer = json.loads(resp.read())["choices"][0]["message"]["content"].strip().lower()
-        return "yes" in answer
+        wait = 5
+        for attempt in range(6):
+            try:
+                with urllib.request.urlopen(req, timeout=120) as resp:
+                    answer = json.loads(resp.read())["choices"][0]["message"]["content"].strip().lower()
+                return "yes" in answer
+            except urllib.error.HTTPError as e:
+                if e.code == 429:
+                    import time
+                    time.sleep(wait)
+                    wait = min(wait * 2, 60)
+                else:
+                    raise
+        raise RuntimeError(f"Rate limit: gave up after 6 retries")
 
 
 class AnthropicProvider(Provider):
@@ -182,13 +245,14 @@ def can_both_be_true(e1: str, e2: str):
         return None
 
 
-def generate_cases(n_each: int = 50, seed: int = 42):
+def generate_cases(n_each: int = 50, seed: int = 42, n_vars: int = 4):
     random.seed(seed)
+    pool = _VAR_POOL.get(n_vars, EXPRESSIONS)
     conflicts, compatibles = [], []
     tried = set()
 
     while len(conflicts) < n_each or len(compatibles) < n_each:
-        e1, e2 = random.choice(EXPRESSIONS), random.choice(EXPRESSIONS)
+        e1, e2 = random.choice(pool), random.choice(pool)
         if (e1, e2) in tried or e1 == e2:
             continue
         tried.add((e1, e2))
@@ -212,7 +276,7 @@ def generate_cases(n_each: int = 50, seed: int = 42):
 
 def _expr_to_z3(expr):
     import z3
-    z3_vars = {v: z3.Bool(v) for v in sorted(set(re.findall(r"[A-D]", expr)))}
+    z3_vars = {v: z3.Bool(v) for v in sorted(set(re.findall(r"[A-Z]", expr)))}
     # operator translation: our syntax → Python bitwise ops (z3 overloads these)
     z3_expr = expr.replace("!", "~").replace(".", "&").replace("+", "|")
     return eval(z3_expr, {"__builtins__": {}}, z3_vars)
@@ -325,7 +389,7 @@ def _print_config(provider: Provider, cases: list, workers: int):
 
 
 def run_benchmark(provider: Provider, cases: list, workers: int = 8,
-                   dashboard=None) -> dict:
+                   dashboard=None, no_think: bool = False) -> dict:
     results = []
     total = len(cases)
 
@@ -337,9 +401,11 @@ def run_benchmark(provider: Provider, cases: list, workers: int = 8,
         all_vars   = sorted(set(re.findall(r"[A-D]", " ".join(e1 + e2 for e1, e2, _ in cases))))
         dashboard.push_config(provider.name, total, n_conflict, n_compat, all_vars, min(workers, total))
 
+    template = PROMPT_TEMPLATE_NO_THINK if no_think else PROMPT_TEMPLATE
+
     def run_case(case):
         e1, e2, ground_truth = case
-        llm_answer = provider.ask(PROMPT_TEMPLATE.format(e1=e1, e2=e2))
+        llm_answer = provider.ask(template.format(e1=e1, e2=e2))
         return {"e1": e1, "e2": e2, "ground_truth": ground_truth,
                 "llm": llm_answer, "correct": llm_answer == ground_truth}
 
@@ -570,6 +636,10 @@ if __name__ == "__main__":
                         help="Parallel workers for concurrent inference calls (default: 8)")
     parser.add_argument("--all", action="store_true",
                         help="Run all configured providers")
+    parser.add_argument("--vars", type=int, default=4, choices=[3, 4, 5, 7, 10],
+                        help="Variable count to scope case generation")
+    parser.add_argument("--no-think", action="store_true",
+                        help="Prepend /no_think to prompt (for qwen3 and other thinking models)")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--web", action="store_true",
                         help="Open live dashboard at localhost:8080")
@@ -578,7 +648,7 @@ if __name__ == "__main__":
     n_each = max(1, args.cases // 2)
     total_cases = n_each * 2
     print(f"Generating {total_cases} test cases ({n_each} conflicting, {n_each} compatible)...")
-    cases = generate_cases(n_each=n_each, seed=args.seed)
+    cases = generate_cases(n_each=n_each, seed=args.seed, n_vars=args.vars)
 
     if not verify_with_z3(cases):
         sys.exit(1)
@@ -598,7 +668,8 @@ if __name__ == "__main__":
 
     summaries = []
     for provider in providers:
-        summary = run_benchmark(provider, cases, workers=args.workers, dashboard=dashboard)
+        summary = run_benchmark(provider, cases, workers=args.workers, dashboard=dashboard,
+                               no_think=args.no_think)
         if summary:
             save_result(summary)
             plot_comparison([summary])
