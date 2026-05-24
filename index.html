@@ -924,11 +924,11 @@ print(result[<span class="c-string">"summary"</span>])
       clicks.push({ plan, ts: new Date().toISOString() });
       localStorage.setItem('bae_clicks', JSON.stringify(clicks));
       // Beacon to GoatCounter (register free at goatcounter.com with code "bool-llm-ngn")
-      navigator.sendBeacon('http://80.225.206.105:9000/count',
+      navigator.sendBeacon('https://shrvx.goatcounter.com/count',
         new URLSearchParams({ p: '/pricing/' + plan, t: 'Pricing click: ' + plan }));
     });
   });
 </script>
-<script data-goatcounter="http://80.225.206.105:9000/count" async src="http://80.225.206.105:9000/count.js"></script>
+<script data-goatcounter="https://shrvx.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
