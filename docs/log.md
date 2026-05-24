@@ -209,7 +209,6 @@ Added `test_integration.py` and `test_edge_cases.py`:
 - Wrote full dark-themed commercial landing page at `index.html` (~600 lines, pure HTML/CSS/JS)
 - Sections: hero with pipeline diagram, stats, forward/inverse code examples, CLI terminal demo, operator table, 20 use cases across 6 categories, deep learning connections, ASCII architecture diagram, 10-milestone roadmap with status tags, footer
 - Started Python HTTP server on port 8080 (background process)
-- Live at: `http://80.225.206.105:8080`
 
 ---
 
@@ -471,7 +470,6 @@ Next: run at 100 cases with a stronger model. That number is publishable.
 - Added truth table heatmap to Expression mode — green/red grid, output column highlighted in gold
 - Added conflict matrix to Rule Auditor — N×N grid, red ✗ for conflicts, green ✓ for safe pairs
 - Installed matplotlib + numpy under python3.11
-- Live at http://80.225.206.105:8080
 
 ### Prompt: "update PRODUCT.md with everything we just figured out"
 Major repositioning. The product is not a library with wrappers — it is a logic layer
