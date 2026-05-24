@@ -109,7 +109,17 @@ Nobody caught these by reading the rules. The engine caught them by checking eve
 
 ## The benchmark
 
-tinyllama and llama3.2:3b both score 50% — equal to a coin flip — in opposite directions: tinyllama always says "yes", llama3.2:3b always says "no". Neither is reasoning. gemma3:4b reaches 35% and actually varies per case — it is reasoning, but still hallucinates on 7 in 20. qwen3-32b scores 17% — the best result so far, but still wrong on 1 in 6 cases.
+Every model tested hallucinates on boolean logic — but in different ways depending on size and architecture.
+
+| Model | Size | Hallucination | Pattern |
+|---|---|---|---|
+| tinyllama | 1.1B | 50% | always says "yes" — never reasoning |
+| llama3.2:3b | 3B | 50% | always says "no" — never reasoning |
+| gemma3:4b | 4B | 35% | reasoning per case, but wrong 1 in 3 |
+| qwen3-32b | 32B | 17% | reasoning, consistent ~17% baseline |
+| llama-3.3-70b | 70B | 20% | reasoning, but over-cautious — misses 40% of compatible pairs |
+
+The small models aren't reasoning at all — they picked a default and stuck to it. The larger models reason but still hallucinate. llama-3.3-70b scores 20% but makes only one type of error: it assumes rules conflict when they don't (0% missed conflicts, 40% missed compatibles).
 
 **Variable curve — does complexity make it worse?**
 
