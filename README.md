@@ -1,6 +1,10 @@
 # boolean-algebra-engine
 
-Deterministic boolean logic verification for AI pipelines. Catches rule contradictions LLMs miss — provably, in under 10ms. Zero dependencies.
+**Your AI agent's decision rules might contradict each other. LLMs can't reliably catch that. This engine can — provably, in under 10ms.**
+
+AI agents with decision logic — loan approval, compliance checks, access control, policy enforcement — run on boolean rules written by humans. Nobody verifies those rules don't conflict before the agent acts on them. This engine does.
+
+The benchmark shows why you need it: even a 70B model gets ~20% of boolean logic questions wrong. You can't ask an LLM if your rules conflict and trust the answer. You need a deterministic layer that computes it.
 
 90 tests passing · <10ms evaluation · zero dependencies · exhaustive enumeration, not sampling
 
