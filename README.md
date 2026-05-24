@@ -39,6 +39,41 @@ print(minimal)             # A.C+A.B
 
 ---
 
+## Try it immediately
+
+```bash
+pip install boolean-algebra-engine
+python -c "from core.evaluator import evaluate; t,_ = evaluate('A.!A'); print(t.satisfiable)"
+```
+
+```
+False — contradiction detected
+```
+
+<details>
+<summary>Optional extras</summary>
+
+```bash
+# With CLI
+pip install "boolean-algebra-engine[cli]"
+
+# With MCP server (for Claude Desktop)
+pip install "boolean-algebra-engine[mcp]"
+
+# With REST API
+pip install "boolean-algebra-engine[api]"
+
+# With NL layer (Anthropic)
+pip install "boolean-algebra-engine[nl-anthropic]"
+
+# With NL layer (OpenAI)
+pip install "boolean-algebra-engine[nl-openai]"
+```
+
+</details>
+
+---
+
 ## The problem
 
 Six rules. Three variables. Written by four people over six months.
@@ -73,6 +108,10 @@ Nobody caught these by reading the rules. The engine caught them by checking eve
 ---
 
 ## The benchmark
+
+Both models score 50% — equal to a coin flip — but in opposite directions. tinyllama always answers "yes", llama3.2:3b always answers "no". Neither is reasoning. Both are outputting a constant.
+
+<details><summary>Full benchmark results</summary>
 
 The engine is the oracle — ground truth is computed by exhaustive enumeration, not guessed. Every LLM disagreement is a provable hallucination.
 
@@ -171,48 +210,13 @@ python3 benchmark.py --provider ollama --model llama3.2:3b --cases 20
 ╰────────────────────────────────────────────────────╯
 ```
 
-Both models score 50% — equal to a coin flip — but in opposite directions. tinyllama always answers "yes", llama3.2:3b always answers "no". Neither is reasoning. Both are outputting a constant.
-
 The `vars` column shows how many variables each case involves. The `engine` column is ground truth. Every mismatch with `llm` is a provable hallucination — not an opinion.
-
-![Benchmark results — 20 cases](https://raw.githubusercontent.com/Shrivastava-Aditya/bool-LLM-ngn/main/images/benchmark_20cases.png)
 
 Per-case strips (bottom row of the chart): every conflict cell is uniformly one colour per model, every compatible cell is the opposite. No case-by-case variation — no reasoning happening at all.
 
----
-
-## Try it immediately
-
-```bash
-pip install boolean-algebra-engine
-python -c "from core.evaluator import evaluate; t,_ = evaluate('A.!A'); print(t.satisfiable)"
-```
-
-```
-False — contradiction detected
-```
-
-<details>
-<summary>Optional extras</summary>
-
-```bash
-# With CLI
-pip install "boolean-algebra-engine[cli]"
-
-# With MCP server (for Claude Desktop)
-pip install "boolean-algebra-engine[mcp]"
-
-# With REST API
-pip install "boolean-algebra-engine[api]"
-
-# With NL layer (Anthropic)
-pip install "boolean-algebra-engine[nl-anthropic]"
-
-# With NL layer (OpenAI)
-pip install "boolean-algebra-engine[nl-openai]"
-```
-
 </details>
+
+![Benchmark results — 20 cases](https://raw.githubusercontent.com/Shrivastava-Aditya/bool-LLM-ngn/main/images/benchmark_20cases.png)
 
 ---
 
