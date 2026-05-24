@@ -109,7 +109,7 @@ Nobody caught these by reading the rules. The engine caught them by checking eve
 
 ## The benchmark
 
-Both models score 50% — equal to a coin flip — but in opposite directions. tinyllama always answers "yes", llama3.2:3b always answers "no". Neither is reasoning. Both are outputting a constant.
+tinyllama and llama3.2:3b both score 50% — equal to a coin flip — in opposite directions: tinyllama always says "yes", llama3.2:3b always says "no". Neither is reasoning. gemma3:4b reaches 35% and actually varies per case — it is reasoning, but still hallucinates on 7 in 20.
 
 <details><summary>Full benchmark results</summary>
 
@@ -120,6 +120,7 @@ The engine is the oracle — ground truth is computed by exhaustive enumeration,
 ```
 python3 benchmark.py --provider ollama --model tinyllama --cases 20
 python3 benchmark.py --provider ollama --model llama3.2:3b --cases 20
+python3 benchmark.py --provider ollama --model gemma3:4b --cases 20
 ```
 
 **tinyllama — 1.1B parameters**
@@ -210,9 +211,59 @@ python3 benchmark.py --provider ollama --model llama3.2:3b --cases 20
 ╰────────────────────────────────────────────────────╯
 ```
 
+**gemma3:4b — 4B parameters**
+
+```
+╭───────────── benchmark config ──────────────╮
+│ model        ollama/gemma3:4b               │
+│ cases        20  (10 conflict · 10 compat)  │
+│ variables    4  (A, B, C, D)                │
+│ temperature  0  (deterministic)             │
+│ max tokens   5  (yes / no)                  │
+╰─────────────────────────────────────────────╯
+
+  ollama/gemma3:4b — 20/20 cases | 35.0% hallucination rate
+
+  #      Rule 1          Rule 2          vars      engine  llm
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1  ✗   B               !B              B           no    yes
+  2  ✓   A.B+C           !A.!B.!C        A B C       no     no
+  3  ✓   A.B             A.!B            A B         no     no
+  4  ✓   A+!B            A.(B+C)         A B C      yes    yes
+  5  ✗   A.B             A^B             A B         no    yes
+  6  ✗   !A+B.C          B               A B C      yes     no
+  7  ✓   A.B+C           A+B             A B C      yes    yes
+  8  ✓   A+B.C.D         C               A B C D    yes    yes
+  9  ✓   A.B             B               A B        yes    yes
+ 10  ✗   !C              !B              B C        yes     no
+ 11  ✓   A.B+!A.!B       !A.B            A B         no     no
+ 12  ✓   !A+B.C          A.B.!C          A B C       no     no
+ 13  ✓   A.B.!C          !A              A B C       no     no
+ 14  ✗   A.B.C           A.!B            A B C       no    yes
+ 15  ✗   !A.B            A+B.C.D         A B C D    yes     no
+ 16  ✓   A.!B            !A+B            A B         no     no
+ 17  ✓   A+B+C           A.B+C           A B C      yes    yes
+ 18  ✓   A+!B            A               A B        yes    yes
+ 19  ✗   A.(B+C)         !A.B            A B C       no    yes
+ 20  ✓   A.B.C           A.B+C.D         A B C D    yes    yes
+
+╭─────────── results — ollama/gemma3:4b ─────────────╮
+│ model               ollama/gemma3:4b               │
+│ total cases         20  (10 conflict · 10 compat)  │
+│ variables           4  (A, B, C, D)                │
+│ temperature         0  (deterministic)             │
+│ max tokens          5                              │
+│ correct             13                             │
+│ hallucinated        7                              │
+│ hallucination rate  35.0%                          │
+│ missed conflicts    4/10  (40.0%)                  │
+│ missed compatibles  3/10  (30.0%)                  │
+╰────────────────────────────────────────────────────╯
+```
+
 The `vars` column shows how many variables each case involves. The `engine` column is ground truth. Every mismatch with `llm` is a provable hallucination — not an opinion.
 
-Per-case strips (bottom row of the chart): every conflict cell is uniformly one colour per model, every compatible cell is the opposite. No case-by-case variation — no reasoning happening at all.
+Per-case strips (bottom row of the chart): tinyllama and llama3.2:3b show uniform colour across all cells of each type — a constant output, no case-by-case variation. gemma3:4b shows mixed cells, indicating it engages with each case individually rather than defaulting to one answer.
 
 </details>
 
