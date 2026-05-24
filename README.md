@@ -10,6 +10,22 @@ pip install boolean-algebra-engine
 
 ---
 
+## The benchmark
+
+Every model tested hallucinates on boolean logic — but in different ways depending on size and architecture.
+
+| Model | Size | Hallucination | Pattern |
+|---|---|---|---|
+| tinyllama | 1.1B | 50% | always says "yes" — never reasoning |
+| llama3.2:3b | 3B | 50% | always says "no" — never reasoning |
+| gemma3:4b | 4B | 35% | reasoning per case, but wrong 1 in 3 |
+| qwen3-32b | 32B | 17% | reasoning, consistent ~17% baseline |
+| llama-3.3-70b | 70B | 20% | reasoning, but over-cautious — misses 40% of compatible pairs |
+
+The small models aren't reasoning at all — they picked a default and stuck to it. The larger models reason but still hallucinate. llama-3.3-70b scores 20% but makes only one type of error: it assumes rules conflict when they don't (0% missed conflicts, 40% missed compatibles).
+
+---
+
 ## Quick start
 
 Zero dependencies. Works immediately after install.
@@ -107,19 +123,7 @@ Nobody caught these by reading the rules. The engine caught them by checking eve
 
 ---
 
-## The benchmark
-
-Every model tested hallucinates on boolean logic — but in different ways depending on size and architecture.
-
-| Model | Size | Hallucination | Pattern |
-|---|---|---|---|
-| tinyllama | 1.1B | 50% | always says "yes" — never reasoning |
-| llama3.2:3b | 3B | 50% | always says "no" — never reasoning |
-| gemma3:4b | 4B | 35% | reasoning per case, but wrong 1 in 3 |
-| qwen3-32b | 32B | 17% | reasoning, consistent ~17% baseline |
-| llama-3.3-70b | 70B | 20% | reasoning, but over-cautious — misses 40% of compatible pairs |
-
-The small models aren't reasoning at all — they picked a default and stuck to it. The larger models reason but still hallucinate. llama-3.3-70b scores 20% but makes only one type of error: it assumes rules conflict when they don't (0% missed conflicts, 40% missed compatibles).
+## The benchmark (full results)
 
 **Variable curve — does complexity make it worse?**
 
