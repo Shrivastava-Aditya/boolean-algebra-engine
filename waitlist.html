@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Join the Waitlist — Boolean Algebra Engine</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #0a0a0a;
+    --surface: #141414;
+    --border:  #2a2a2a;
+    --text:    #f0f0f0;
+    --muted:   #777;
+    --green:   #3fb950;
+    --red:     #f85149;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  a { color: var(--text); text-decoration: none; }
+  a:hover { color: var(--green); }
+
+  nav {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 0;
+    background: rgba(10,10,10,0.95);
+    backdrop-filter: blur(8px);
+  }
+  nav .inner {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-brand { font-weight: 600; font-size: 1rem; }
+  .nav-brand span { color: #fff; }
+
+  main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 24px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 48px;
+    max-width: 480px;
+    width: 100%;
+  }
+
+  .plan-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid #333;
+    color: #aaa;
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .plan-badge.pro { border-color: rgba(63,185,80,0.4); color: var(--green); background: rgba(63,185,80,0.06); }
+
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+
+  .sub {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+
+  .form-group { margin-bottom: 16px; }
+
+  label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  input:focus, select:focus { border-color: #555; }
+  select option { background: #1a1a1a; }
+
+  .btn {
+    width: 100%;
+    padding: 12px;
+    background: #f0f0f0;
+    color: #0a0a0a;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: opacity 0.15s;
+  }
+  .btn:hover { opacity: 0.85; }
+
+  .fine-print {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 16px;
+  }
+
+  .back-link {
+    display: block;
+    text-align: center;
+    margin-top: 24px;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .back-link:hover { color: var(--text); }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 24px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="inner">
+    <a href="index.html" class="nav-brand">boolean-algebra-<span>engine</span></a>
+    <a href="index.html" style="font-size:0.875rem; color:var(--muted);">← Back</a>
+  </div>
+</nav>
+
+<main>
+  <div class="card">
+    <div class="plan-badge pro" id="plan-label">Pro</div>
+    <h1>Join the waitlist</h1>
+    <p class="sub">We're in early access. Drop your email and we'll reach out when your tier is ready — no spam, one email.</p>
+
+    <form action="https://formsubmit.co/adityars.work@gmail.com" method="POST">
+      <input type="hidden" name="_subject" id="form-subject" value="Waitlist signup — Pro">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="hidden" name="_template" value="table">
+      <input type="hidden" name="_next" value="https://shrivastava-aditya.github.io/bool-LLM-ngn/thanks.html">
+
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" placeholder="Your name" required>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" placeholder="you@company.com" required>
+      </div>
+
+      <div class="form-group">
+        <label for="plan">Plan interest</label>
+        <select id="plan" name="plan">
+          <option value="pro">Pro — $9–15/month</option>
+          <option value="team">Team — $49–99/month</option>
+          <option value="enterprise">Enterprise — custom</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="usecase">What are you building? <span style="color:#555">(optional)</span></label>
+        <input type="text" id="usecase" name="usecase" placeholder="e.g. compliance agent, prompt auditor...">
+      </div>
+
+      <button type="submit" class="btn">Join waitlist</button>
+    </form>
+
+    <p class="fine-print">No credit card. No commitment. Just an email when it's ready.</p>
+    <a href="index.html" class="back-link">← Back to boolean-algebra-engine</a>
+  </div>
+</main>
+
+<footer>boolean-algebra-engine · deterministic logic verification</footer>
+
+<script>
+  // Set plan from URL param: ?plan=free|pro|team
+  const params = new URLSearchParams(window.location.search);
+  const plan = params.get('plan') || 'pro';
+  const labels = { free: 'Free', pro: 'Pro', team: 'Team' };
+  const planLabel = document.getElementById('plan-label');
+  const planSelect = document.getElementById('plan');
+  const formSubject = document.getElementById('form-subject');
+
+  if (plan === 'free') {
+    planLabel.textContent = 'Free';
+    planLabel.classList.remove('pro');
+  } else if (plan === 'team') {
+    planLabel.textContent = 'Team';
+    planSelect.value = 'team';
+  }
+  formSubject.value = `Waitlist signup — ${labels[plan] || 'Pro'}`;
+</script>
+
+</body>
+</html>

@@ -813,6 +813,7 @@ result[<span class="c-string">"summary"</span>]
           <li>Full source — AGPL-3.0</li>
           <li>90 tests, auditable core</li>
         </ul>
+        <a href="https://github.com/Shrivastava-Aditya/bool-LLM-ngn" class="pricing-btn" data-plan="free" style="display:block;margin-top:24px;padding:10px;text-align:center;border:1px solid #2a2a2a;border-radius:6px;font-size:0.875rem;font-weight:500;color:#f0f0f0;background:transparent;text-decoration:none;transition:border-color 0.15s;" onmouseover="this.style.borderColor='#555'" onmouseout="this.style.borderColor='#2a2a2a'">View on GitHub →</a>
       </div>
       <div class="pricing-card featured">
         <div class="pricing-tier">Pro</div>
@@ -825,6 +826,7 @@ result[<span class="c-string">"summary"</span>]
           <li>Redis cache — skip recomputation</li>
           <li>Usage dashboard</li>
         </ul>
+        <a href="waitlist.html?plan=pro" class="pricing-btn" data-plan="pro" style="display:block;margin-top:24px;padding:10px;text-align:center;border-radius:6px;font-size:0.875rem;font-weight:600;color:#0a0a0a;background:#f0f0f0;text-decoration:none;transition:opacity 0.15s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Join waitlist →</a>
       </div>
       <div class="pricing-card">
         <div class="pricing-tier">Team</div>
@@ -837,6 +839,7 @@ result[<span class="c-string">"summary"</span>]
           <li>Commercial license</li>
           <li>Priority support</li>
         </ul>
+        <a href="waitlist.html?plan=team" class="pricing-btn" data-plan="team" style="display:block;margin-top:24px;padding:10px;text-align:center;border:1px solid #2a2a2a;border-radius:6px;font-size:0.875rem;font-weight:500;color:#f0f0f0;background:transparent;text-decoration:none;transition:border-color 0.15s;" onmouseover="this.style.borderColor='#555'" onmouseout="this.style.borderColor='#2a2a2a'">Join waitlist →</a>
       </div>
     </div>
     <p style="text-align:center; color:var(--muted); font-size:0.875rem; margin-top: 24px;">A logic bug in a production system prompt caught before shipping is worth far more than $9/month to the right team.</p>
@@ -904,5 +907,19 @@ print(result[<span class="c-string">"summary"</span>])
   </div>
 </footer>
 
+<script>
+  // Click tracking — logs plan + timestamp to localStorage and pings a count beacon
+  document.querySelectorAll('.pricing-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const plan = this.dataset.plan;
+      const clicks = JSON.parse(localStorage.getItem('bae_clicks') || '[]');
+      clicks.push({ plan, ts: new Date().toISOString() });
+      localStorage.setItem('bae_clicks', JSON.stringify(clicks));
+      // Beacon to GoatCounter (register free at goatcounter.com with code "bool-llm-ngn")
+      navigator.sendBeacon('https://bool-llm-ngn.goatcounter.com/count',
+        new URLSearchParams({ p: '/pricing/' + plan, t: 'Pricing click: ' + plan }));
+    });
+  });
+</script>
 </body>
 </html>
