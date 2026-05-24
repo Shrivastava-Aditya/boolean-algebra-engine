@@ -109,7 +109,20 @@ Nobody caught these by reading the rules. The engine caught them by checking eve
 
 ## The benchmark
 
-tinyllama and llama3.2:3b both score 50% — equal to a coin flip — in opposite directions: tinyllama always says "yes", llama3.2:3b always says "no". Neither is reasoning. gemma3:4b reaches 35% and actually varies per case — it is reasoning, but still hallucinates on 7 in 20.
+tinyllama and llama3.2:3b both score 50% — equal to a coin flip — in opposite directions: tinyllama always says "yes", llama3.2:3b always says "no". Neither is reasoning. gemma3:4b reaches 35% and actually varies per case — it is reasoning, but still hallucinates on 7 in 20. qwen3-32b scores 17% — the best result so far, but still wrong on 1 in 6 cases.
+
+**Variable curve — does complexity make it worse?**
+
+qwen3-32b was run across variable counts from 3 to 10 (8 to 1,024 truth table rows), 100 cases each. The hallucination rate stayed flat at 16–19% throughout. Complexity doesn't degrade it — the errors are a consistent baseline, not caused by harder logic.
+
+| variables (n) | truth table rows | hallucination rate |
+|---|---|---|
+| 3 | 8 | 16% |
+| 5 | 32 | 19% |
+| 7 | 128 | 16% |
+| 10 | 1,024 | 19% |
+
+![Variable curve — qwen3-32b](https://raw.githubusercontent.com/Shrivastava-Aditya/bool-LLM-ngn/main/images/curve.png)
 
 <details><summary>Full benchmark results</summary>
 
