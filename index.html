@@ -8,17 +8,14 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #0d1117;
-    --surface: #161b22;
-    --border: #30363d;
-    --text: #e6edf3;
-    --muted: #8b949e;
-    --green: #3fb950;
-    --red: #f85149;
-    --yellow: #e3b341;
-    --blue: #58a6ff;
-    --purple: #bc8cff;
-    --accent: #238636;
+    --bg:      #0a0a0a;
+    --surface: #141414;
+    --surface2: #1e1e1e;
+    --border:  #2a2a2a;
+    --text:    #f0f0f0;
+    --muted:   #777;
+    --green:   #3fb950;
+    --red:     #f85149;
   }
 
   html { scroll-behavior: smooth; }
@@ -31,8 +28,8 @@
     line-height: 1.6;
   }
 
-  a { color: var(--blue); text-decoration: none; }
-  a:hover { text-decoration: underline; }
+  a { color: var(--text); text-decoration: none; }
+  a:hover { color: var(--green); text-decoration: none; }
 
   code, pre {
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
@@ -47,7 +44,7 @@
     padding: 16px 0;
     position: sticky;
     top: 0;
-    background: rgba(13,17,23,0.95);
+    background: rgba(10,10,10,0.95);
     backdrop-filter: blur(8px);
     z-index: 100;
   }
@@ -60,7 +57,7 @@
     justify-content: space-between;
   }
   .nav-brand { font-weight: 600; font-size: 1rem; color: var(--text); }
-  .nav-brand span { color: var(--green); }
+  .nav-brand span { color: #fff; }
   .nav-links { display: flex; gap: 24px; font-size: 0.875rem; }
   .nav-links a { color: var(--muted); }
   .nav-links a:hover { color: var(--text); text-decoration: none; }
@@ -69,9 +66,9 @@
   .hero { padding: 96px 0 72px; text-align: center; }
   .hero-badge {
     display: inline-block;
-    background: rgba(35,134,54,0.15);
-    border: 1px solid rgba(63,185,80,0.3);
-    color: var(--green);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid #333;
+    color: #aaa;
     border-radius: 20px;
     padding: 4px 16px;
     font-size: 0.8rem;
@@ -87,7 +84,7 @@
     letter-spacing: -0.02em;
     margin-bottom: 24px;
   }
-  .hero h1 em { color: var(--green); font-style: normal; }
+  .hero h1 em { color: #fff; font-style: normal; }
   .hero p {
     font-size: 1.2rem;
     color: var(--muted);
@@ -105,7 +102,7 @@
     transition: opacity 0.15s;
   }
   .btn:hover { opacity: 0.85; text-decoration: none; }
-  .btn-primary { background: var(--accent); color: #fff; border: 1px solid #2ea043; }
+  .btn-primary { background: #f0f0f0; color: #0a0a0a; border: 1px solid #f0f0f0; }
   .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
 
   /* STATS */
@@ -121,7 +118,7 @@
     gap: 32px;
     text-align: center;
   }
-  .stat-value { font-size: 2rem; font-weight: 700; color: var(--green); }
+  .stat-value { font-size: 2rem; font-weight: 700; color: #f0f0f0; }
   .stat-label { font-size: 0.78rem; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
 
   /* SECTIONS */
@@ -133,7 +130,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--green);
+    color: #777;
     margin-bottom: 12px;
   }
   h2 {
@@ -154,7 +151,7 @@
     overflow: hidden;
   }
   .code-block-header {
-    background: #1c2128;
+    background: var(--surface2);
     border-bottom: 1px solid var(--border);
     padding: 8px 16px;
     font-size: 0.75rem;
@@ -171,17 +168,17 @@
     background: var(--green);
   }
   .code-block pre { padding: 20px; overflow-x: auto; font-size: 0.875rem; line-height: 1.7; }
-  .c-comment { color: #6e7681; }
-  .c-keyword { color: var(--purple); }
-  .c-string { color: #a5d6ff; }
+  .c-comment { color: #555; }
+  .c-keyword { color: #ccc; }
+  .c-string { color: #e0e0e0; }
   .c-good { color: var(--green); }
   .c-bad { color: var(--red); }
-  .c-warn { color: var(--yellow); }
+  .c-warn { color: #999; }
 
   /* QUOTE */
   .quote-block {
-    border-left: 3px solid var(--yellow);
-    background: rgba(227,179,65,0.05);
+    border-left: 3px solid #444;
+    background: rgba(255,255,255,0.02);
     border-radius: 0 6px 6px 0;
     padding: 16px 20px;
     margin: 24px 0;
@@ -272,7 +269,7 @@
   .matrix-cell.header { background: var(--surface); color: var(--muted); font-size: 0.75rem; font-weight: 600; }
   .matrix-cell.conflict { background: rgba(248,81,73,0.2); border-color: rgba(248,81,73,0.4); color: var(--red); }
   .matrix-cell.safe { background: rgba(63,185,80,0.1); border-color: rgba(63,185,80,0.3); color: var(--green); }
-  .matrix-cell.diag { background: #1c2128; color: #444; }
+  .matrix-cell.diag { background: var(--surface2); color: #444; }
 
   /* PRICING */
   .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
@@ -289,10 +286,10 @@
 
   /* CALLOUT */
   .callout {
-    background: rgba(88,166,255,0.05); border: 1px solid rgba(88,166,255,0.2);
+    background: rgba(255,255,255,0.03); border: 1px solid #333;
     border-radius: 8px; padding: 20px 24px; font-size: 0.9rem; line-height: 1.7; margin: 24px 0;
   }
-  .callout strong { color: var(--blue); }
+  .callout strong { color: var(--text); }
 
   /* FOOTER */
   footer { border-top: 1px solid var(--border); padding: 40px 0; text-align: center; color: var(--muted); font-size: 0.875rem; }
@@ -405,7 +402,7 @@ result = check_prompt_logic([<span class="c-string">"L+!M"</span>, <span class="
 
     <div class="two-col" style="margin-bottom: 48px;">
       <div>
-        <h3 style="margin-bottom: 12px; color: var(--green);">Forward · Expression → Truth Table</h3>
+        <h3 style="margin-bottom: 12px;">Forward · Expression → Truth Table</h3>
         <div class="code-block">
           <div class="code-block-header">python</div>
           <pre><span class="c-keyword">from</span> core.evaluator <span class="c-keyword">import</span> evaluate
@@ -420,7 +417,7 @@ metrics.eval_time_ms <span class="c-comment"># 0.8</span></pre>
         </div>
       </div>
       <div>
-        <h3 style="margin-bottom: 12px; color: var(--blue);">Inverse · Truth Table → Minimal Expression</h3>
+        <h3 style="margin-bottom: 12px;">Inverse · Truth Table → Minimal Expression</h3>
         <div class="code-block">
           <div class="code-block-header">python · Quine-McCluskey</div>
           <pre><span class="c-keyword">from</span> core.synthesizer <span class="c-keyword">import</span> synthesize
@@ -515,8 +512,8 @@ result[<span class="c-string">"summary"</span>]
             <tbody>
               <tr><td><span class="ok-tag">Satisfiable</span></td><td style="color:var(--muted);font-size:0.875rem;">Found an actual row where output = 1</td></tr>
               <tr><td><span class="conflict-tag">Contradiction</span></td><td style="color:var(--muted);font-size:0.875rem;">Checked every row — all were 0</td></tr>
-              <tr><td style="color:var(--yellow);">Tautology</td><td style="color:var(--muted);font-size:0.875rem;">All rows output 1 — rule is redundant</td></tr>
-              <tr><td style="color:var(--blue);">Equivalent</td><td style="color:var(--muted);font-size:0.875rem;">Output columns identical row-by-row</td></tr>
+              <tr><td style="color:#888;">Tautology</td><td style="color:var(--muted);font-size:0.875rem;">All rows output 1 — rule is redundant</td></tr>
+              <tr><td style="color:var(--text);">Equivalent</td><td style="color:var(--muted);font-size:0.875rem;">Output columns identical row-by-row</td></tr>
               <tr><td><span class="conflict-tag">Conflict</span></td><td style="color:var(--muted);font-size:0.875rem;">Conjunction always false — can never both fire</td></tr>
             </tbody>
           </table>
@@ -576,19 +573,19 @@ result[<span class="c-string">"summary"</span>]
           <tr>
             <td><strong>gemma3:4b</strong></td>
             <td style="color:var(--muted);">4B</td>
-            <td style="color:var(--yellow); font-weight:600;">35%</td>
+            <td style="color:#888; font-weight:600;">35%</td>
             <td style="color:var(--muted);font-size:0.875rem;">Reasons per case, wrong 1 in 3</td>
           </tr>
           <tr>
             <td><strong>qwen3-32b</strong></td>
             <td style="color:var(--muted);">32B</td>
-            <td style="color:var(--yellow); font-weight:600;">17%</td>
+            <td style="color:#888; font-weight:600;">17%</td>
             <td style="color:var(--muted);font-size:0.875rem;">Consistent ~17% baseline across all complexity levels</td>
           </tr>
           <tr>
             <td><strong>llama-3.3-70b</strong></td>
             <td style="color:var(--muted);">70B</td>
-            <td style="color:var(--yellow); font-weight:600;">20%</td>
+            <td style="color:#888; font-weight:600;">20%</td>
             <td style="color:var(--muted);font-size:0.875rem;">0% missed conflicts, 40% missed compatible pairs — over-cautious</td>
           </tr>
         </tbody>
@@ -613,22 +610,22 @@ result[<span class="c-string">"summary"</span>]
           <tr>
             <td>3</td>
             <td style="color:var(--muted);">8</td>
-            <td style="color:var(--yellow); font-weight:600;">16%</td>
+            <td style="color:#888; font-weight:600;">16%</td>
           </tr>
           <tr>
             <td>5</td>
             <td style="color:var(--muted);">32</td>
-            <td style="color:var(--yellow); font-weight:600;">19%</td>
+            <td style="color:#888; font-weight:600;">19%</td>
           </tr>
           <tr>
             <td>7</td>
             <td style="color:var(--muted);">128</td>
-            <td style="color:var(--yellow); font-weight:600;">16%</td>
+            <td style="color:#888; font-weight:600;">16%</td>
           </tr>
           <tr>
             <td>10</td>
             <td style="color:var(--muted);">1,024</td>
-            <td style="color:var(--yellow); font-weight:600;">19%</td>
+            <td style="color:#888; font-weight:600;">19%</td>
           </tr>
         </tbody>
       </table>
