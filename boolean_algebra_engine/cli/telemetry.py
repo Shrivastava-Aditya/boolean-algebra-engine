@@ -56,7 +56,7 @@ _CONFIG_FILE = _CONFIG_DIR / "telemetry.json"
 
 _PROMPT = """\
 
-  Help improve Quine — share anonymous usage stats? (y/N)
+  Help improve boolcalc — share anonymous usage stats? (y/N)
   What's sent: command used, OS, Python version. Nothing personal.
   Data goes to PostHog and GoatCounter (anonymous analytics).
   Opt out anytime: set BOOLCALC_NO_TELEMETRY=1 or edit
@@ -64,8 +64,8 @@ _PROMPT = """\
 
   > """
 
-_WELCOME = "  \033[2m→ Thanks for installing Quine! Star or open an issue: github.com/Shrivastava-Aditya/bool-LLM-ngn\033[0m"
-_NUDGE = "  \033[2m→ Finding Quine useful? Star or open an issue: github.com/Shrivastava-Aditya/bool-LLM-ngn\033[0m"
+_WELCOME = "  \033[2m→ Thanks for installing boolcalc! Star or open an issue: github.com/Shrivastava-Aditya/bool-LLM-ngn\033[0m"
+_NUDGE = "  \033[2m→ Finding boolcalc useful? Star or open an issue: github.com/Shrivastava-Aditya/bool-LLM-ngn\033[0m"
 _NUDGE_EVERY = 10   # show every N runs
 _NUDGE_MAX   = 3    # stop after showing this many times
 
@@ -142,7 +142,7 @@ def maybe_prompt() -> None:
             _ph.capture("install", distinct_id=install_id, properties={"version": _VERSION, "os": platform.system()})
             _ph.capture("telemetry_choice", distinct_id=install_id, properties={"opted_in": True})
         _gc_ping("/cli/install/telemetry-yes", "boolcalc telemetry yes")
-        print("  Thanks — helps Quine know what to build next.\n")
+        print("  Thanks — helps boolcalc know what to build next.\n")
     else:
         _gc_ping("/cli/install/telemetry-no", "boolcalc telemetry no")
 
