@@ -28,11 +28,27 @@ from boolean_algebra_engine.core.evaluator import evaluate
 from boolean_algebra_engine.core.synthesizer import synthesize
 from boolean_algebra_engine.cli import telemetry
 
+_VERSION = "0.3.6"
+
+
+def _version_callback(value: bool):
+    if value:
+        typer.echo(f"boolcalc {_VERSION}")
+        raise typer.Exit()
+
+
 app = typer.Typer(
     name="boolcalc",
     help="Boolean algebra engine — evaluate expressions and synthesize minimal forms.",
     add_completion=False,
 )
+
+
+@app.callback()
+def _root(
+    version: Optional[bool] = typer.Option(None, "--version", "-V", callback=_version_callback, is_eager=True, help="Show version and exit."),
+):
+    pass
 console = Console()
 err_console = Console(stderr=True)
 
@@ -50,8 +66,8 @@ def _read_stdin() -> str | None:
     return None
 
 
-@app.command(hidden=True)
-def main(
+@app.command("evaluate")
+def cmd_evaluate(
     expression: Optional[str] = typer.Argument(
         None,
         help="Boolean expression. Variables: A–Z. Operators: ! . ^ +"
@@ -102,6 +118,7 @@ def main(
         help="Launch interactive REPL mode.",
     ),
 ):
+    """Evaluate a boolean expression and print its truth table."""
     # Launch REPL if requested
     if interactive:
         _repl()
@@ -420,7 +437,7 @@ def nl_check_rules(
     telemetry.maybe_nudge()
 
 
-_SUBCOMMANDS = {"ask", "check-rules", "main"}
+_SUBCOMMANDS = {"ask", "check-rules", "evaluate"}
 
 
 def _entrypoint():
@@ -433,7 +450,7 @@ def _entrypoint():
     if first in _SUBCOMMANDS or first.startswith("-"):
         app()
     else:
-        sys.argv.insert(1, "main")
+        sys.argv.insert(1, "evaluate")
         app()
 
 
