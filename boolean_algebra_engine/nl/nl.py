@@ -194,7 +194,7 @@ class OllamaProvider(Provider):
 
     def __init__(
         self,
-        model: str = "deepseek-r1:7b",
+        model: str = "deepseek-r1:latest",
         base_url: str = "http://localhost:11434",
     ):
         self.model = model
@@ -209,7 +209,8 @@ class OllamaProvider(Provider):
                 {"role": "user", "content": user},
             ],
             "stream": False,
-            "options": {"num_predict": max_tokens},
+            "think": False,
+            "options": {"num_predict": max_tokens, "num_ctx": 2048, "num_thread": 2},
         }).encode()
         req = urllib.request.Request(
             f"{self.base_url}/api/chat",
@@ -272,6 +273,18 @@ class OpenAICompatProvider(Provider):
             ],
         )
         return response.choices[0].message.content.strip()
+
+
+def _normalize_expression(expr: str) -> str:
+    """Map common LLM operator variants to the engine's canonical operators."""
+    import re
+    expr = expr.replace("||", "+").replace("|", "+")
+    expr = expr.replace("&&", ".").replace("&", ".")
+    expr = expr.replace("~", "!").replace("NOT ", "!").replace("not ", "!")
+    expr = expr.replace(" AND ", ".").replace(" OR ", "+").replace(" XOR ", "^")
+    expr = expr.replace(" and ", ".").replace(" or ", "+").replace(" xor ", "^")
+    expr = re.sub(r"\s+", "", expr)
+    return expr
 
 
 def _ollama_running(base_url: str = "http://localhost:11434") -> bool:
@@ -366,6 +379,12 @@ def ask(sentence: str, provider: Provider | None = None) -> NLResult:
 
     # Step 1: NL → expression
     raw = llm.complete(_PARSE_SYSTEM, sentence, max_tokens=512)
+    raw = raw.strip()
+    if raw.startswith("```"):
+        raw = raw.split("```", 2)[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+        raw = raw.rsplit("```", 1)[0].strip()
     try:
         parsed = json.loads(raw)
     except json.JSONDecodeError:
@@ -374,6 +393,8 @@ def ask(sentence: str, provider: Provider | None = None) -> NLResult:
     expression = parsed.get("expression", "")
     variables = parsed.get("variables", {})
     assumptions = parsed.get("assumptions", "")
+
+    expression = _normalize_expression(expression)
 
     error = validate(expression)
     if error:
