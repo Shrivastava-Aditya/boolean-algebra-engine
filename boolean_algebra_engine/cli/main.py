@@ -26,6 +26,7 @@ from rich import box
 
 from boolean_algebra_engine.core.evaluator import evaluate
 from boolean_algebra_engine.core.synthesizer import synthesize
+from boolean_algebra_engine.cli import telemetry
 
 app = typer.Typer(
     name="boolcalc",
@@ -118,6 +119,8 @@ def main(
     except ValueError as e:
         err_console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(1)
+
+    telemetry.send("evaluate", variable_count=len(table.variables))
 
     # --- Query flags (no truth table output) ---
     if satisfiable:
@@ -345,6 +348,8 @@ def nl_ask(
         err_console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(1)
 
+    telemetry.send("ask", provider=provider, variable_count=len(result.variables))
+
     if format == Format.json:
         print(json.dumps({
             "input": result.input_sentence,
@@ -401,6 +406,8 @@ def nl_check_rules(
         err_console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(1)
 
+    telemetry.send("check-rules", provider=provider, rule_count=len(rules))
+
     print(json.dumps(result, indent=2))
 
 
@@ -409,6 +416,7 @@ _SUBCOMMANDS = {"ask", "check-rules", "main"}
 
 def entrypoint():
     """Package entry point — dispatches expressions without requiring 'main' subcommand."""
+    telemetry.maybe_prompt()
     args = sys.argv[1:]
     if not args:
         _repl()

@@ -282,6 +282,17 @@ def stats():
     }
 
 
+@app.post("/telemetry")
+async def telemetry(request: Request):
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+    command = payload.get("command", "unknown")
+    _stats["requests"][f"/telemetry/{command}"] += 1
+    return {"ok": True}
+
+
 @app.post("/evaluate")
 @limiter.limit("60/minute")
 def evaluate(req: EvaluateRequest, request: Request, response: Response):
