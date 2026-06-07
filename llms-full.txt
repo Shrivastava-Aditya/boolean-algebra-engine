@@ -2,7 +2,7 @@
 
 Package: boolean-algebra-engine
 PyPI: https://pypi.org/project/boolean-algebra-engine/
-GitHub: https://github.com/Shrivastava-Aditya/boolean-algebra-engine-python
+GitHub: https://github.com/Shrivastava-Aditya/boolean-algebra-engine
 Docker: docker pull shrvx/bool-llm-ngn:latest
 License: AGPL-3.0
 Python: >=3.10

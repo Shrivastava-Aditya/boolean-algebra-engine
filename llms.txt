@@ -128,6 +128,6 @@ pip install "boolean-algebra-engine[nl-openai]"     # + OpenAI NL layer
 ## Links
 
 - PyPI: https://pypi.org/project/boolean-algebra-engine/
-- GitHub: https://github.com/Shrivastava-Aditya/boolean-algebra-engine-python
+- GitHub: https://github.com/Shrivastava-Aditya/boolean-algebra-engine
 - Docker: https://hub.docker.com/r/shrvx/bool-llm-ngn
-- Full API reference: https://raw.githubusercontent.com/Shrivastava-Aditya/boolean-algebra-engine-python/master/llms-full.txt
+- Full API reference: https://raw.githubusercontent.com/Shrivastava-Aditya/boolean-algebra-engine/master/llms-full.txt

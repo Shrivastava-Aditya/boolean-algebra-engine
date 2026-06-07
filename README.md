@@ -120,9 +120,9 @@ qwen3-32b was run across variable counts from 3 to 10 (8 to 1,024 truth table ro
 | 7 | 128 | 16% |
 | 10 | 1,024 | 19% |
 
-![Variable curve — qwen3-32b](https://raw.githubusercontent.com/Shrivastava-Aditya/boolean-algebra-engine-python/master/images/curve.png)
+![Variable curve — qwen3-32b](https://raw.githubusercontent.com/Shrivastava-Aditya/boolean-algebra-engine/master/images/curve.png)
 
-![Benchmark results — 20 cases](https://raw.githubusercontent.com/Shrivastava-Aditya/boolean-algebra-engine-python/master/images/benchmark_20cases.png)
+![Benchmark results — 20 cases](https://raw.githubusercontent.com/Shrivastava-Aditya/boolean-algebra-engine/master/images/benchmark_20cases.png)
 
 <details><summary>Full benchmark results</summary>
 
@@ -441,4 +441,4 @@ No black box, no model weights, no probability — just arithmetic. This is a st
 
 90 tests across unit, integration, edge cases, and round-trips. All passing.
 
-For bugs and feature requests: [open an issue](https://github.com/Shrivastava-Aditya/boolean-algebra-engine-python/issues).
+For bugs and feature requests: [open an issue](https://github.com/Shrivastava-Aditya/boolean-algebra-engine/issues).
