@@ -30,7 +30,7 @@ import urllib.request
 import uuid
 from pathlib import Path
 
-_VERSION = "0.3.4"
+_VERSION = "0.3.5"
 _GC_URL = "https://shrvx.goatcounter.com/count"
 _API_URL = os.environ.get("BOOLCALC_TELEMETRY_URL", "")
 

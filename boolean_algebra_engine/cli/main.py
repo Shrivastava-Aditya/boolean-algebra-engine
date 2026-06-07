@@ -418,8 +418,7 @@ def nl_check_rules(
 _SUBCOMMANDS = {"ask", "check-rules", "main"}
 
 
-def entrypoint():
-    """Package entry point — dispatches expressions without requiring 'main' subcommand."""
+def _entrypoint():
     telemetry.maybe_prompt()
     args = sys.argv[1:]
     if not args:
@@ -434,4 +433,4 @@ def entrypoint():
 
 
 if __name__ == "__main__":
-    entrypoint()
+    _entrypoint()

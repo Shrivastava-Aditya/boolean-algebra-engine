@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.3.5 — 2026-06-07
+- Graceful error when `boolcalc` is run without `[cli]` extras — friendly message instead of traceback
+- Entry point moved to thin `cli/entry.py` wrapper so `main.py` is only imported when typer/rich are present
+
 ## v0.3.4 — 2026-06-07
 - First-run welcome message: dim one-liner shown once on fresh install prompting to star/open an issue on GitHub
 
