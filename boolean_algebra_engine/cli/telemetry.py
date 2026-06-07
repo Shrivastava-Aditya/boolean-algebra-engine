@@ -31,12 +31,13 @@ import uuid
 from pathlib import Path
 
 try:
+    import atexit
     from posthog import Posthog as _Posthog
     _ph = _Posthog(
         project_api_key="phc_Am4NNyVXotVffz6rcBy8xZVUZeaJCCbbHMu63pWMz3M8",
         host="https://us.i.posthog.com",
     )
-    _ph.disabled = False
+    atexit.register(_ph.shutdown)
 except ImportError:
     _ph = None
 
