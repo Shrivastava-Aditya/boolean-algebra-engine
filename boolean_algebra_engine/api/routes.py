@@ -10,6 +10,7 @@ Endpoints:
   POST /nl/ask             plain English → verified boolean result
   POST /nl/check-rules     list of plain English rules → analysis
   GET  /health             liveness check
+  GET  /stats              request counts, error rates, response times, provider usage
 
 Run:
   uvicorn boolean_algebra_engine.api.routes:app --host 0.0.0.0 --port 8080 --reload
@@ -26,10 +27,13 @@ Rate limits (per IP):
 """
 from __future__ import annotations
 
+import collections
 import hashlib
 import json
+import logging
 import os
 import time
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Request, Response
@@ -44,12 +48,15 @@ from boolean_algebra_engine.core.synthesizer import synthesize as _synthesize
 from boolean_algebra_engine.core.parser import validate, infix_to_prefix
 from boolean_algebra_engine.core.evaluator import _evaluate_prefix
 
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger("bae.api")
+
 limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(
     title="Boolean Algebra Engine",
     description="Deterministic boolean logic verification API.",
-    version="0.3.0",
+    version="0.3.1",
 )
 
 app.state.limiter = limiter
@@ -61,6 +68,64 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ---------------------------------------------------------------------------
+# In-memory stats — resets on restart
+# ---------------------------------------------------------------------------
+
+_start_time = time.time()
+
+_stats: dict = {
+    "requests": collections.defaultdict(int),    # path → count
+    "errors": collections.defaultdict(int),      # path → count
+    "duration_ms": collections.defaultdict(list), # path → [ms, ...]
+    "status_codes": collections.defaultdict(int), # "200" → count
+    "cache_hits": collections.defaultdict(int),  # path → count
+    "providers": collections.defaultdict(int),   # "anthropic" → count
+    "rate_limited": 0,
+}
+
+
+def _record(path: str, status: int, duration_ms: float, cache_hit: bool = False):
+    _stats["requests"][path] += 1
+    _stats["status_codes"][str(status)] += 1
+    _stats["duration_ms"][path].append(round(duration_ms, 2))
+    if status >= 400:
+        _stats["errors"][path] += 1
+    if status == 429:
+        _stats["rate_limited"] += 1
+    if cache_hit:
+        _stats["cache_hits"][path] += 1
+
+
+# ---------------------------------------------------------------------------
+# Request logging middleware
+# ---------------------------------------------------------------------------
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    t0 = time.perf_counter()
+    response = await call_next(request)
+    duration_ms = (time.perf_counter() - t0) * 1000
+
+    cache = response.headers.get("X-Cache", "")
+    path = request.url.path
+
+    _record(path, response.status_code, duration_ms, cache_hit=(cache == "HIT"))
+
+    logger.info(json.dumps({
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "method": request.method,
+        "path": path,
+        "status": response.status_code,
+        "duration_ms": round(duration_ms, 2),
+        "ip": request.client.host if request.client else None,
+        "ua": request.headers.get("user-agent", "")[:120],
+        "cache": cache or None,
+    }, default=str))
+
+    return response
 
 
 # ---------------------------------------------------------------------------
@@ -163,6 +228,7 @@ class NLCheckRulesRequest(BaseModel):
 
 def _build_provider(provider: str, api_key: Optional[str], model: Optional[str], base_url: Optional[str]):
     from boolean_algebra_engine.nl.nl import AnthropicProvider, OpenAIProvider, OllamaProvider, OpenAICompatProvider
+    _stats["providers"][provider] += 1
     if provider == "anthropic":
         return AnthropicProvider(api_key=api_key, model=model or "claude-sonnet-4-6")
     if provider == "openai":
@@ -183,7 +249,37 @@ def _build_provider(provider: str, api_key: Optional[str], model: Optional[str],
 @app.get("/health")
 def health():
     redis_ok = _get_redis() is not None
-    return {"status": "ok", "version": "0.3.0", "redis": redis_ok}
+    return {"status": "ok", "version": "0.3.1", "redis": redis_ok}
+
+
+@app.get("/stats")
+def stats():
+    uptime_s = round(time.time() - _start_time)
+    total = sum(_stats["requests"].values())
+    total_errors = sum(_stats["errors"].values())
+
+    per_endpoint = {}
+    for path, count in _stats["requests"].items():
+        durations = _stats["duration_ms"][path]
+        per_endpoint[path] = {
+            "requests": count,
+            "errors": _stats["errors"].get(path, 0),
+            "cache_hits": _stats["cache_hits"].get(path, 0),
+            "avg_ms": round(sum(durations) / len(durations), 2) if durations else 0,
+            "p99_ms": round(sorted(durations)[int(len(durations) * 0.99)] if len(durations) >= 100 else max(durations, default=0), 2),
+        }
+
+    return {
+        "uptime_seconds": uptime_s,
+        "total_requests": total,
+        "total_errors": total_errors,
+        "error_rate": round(total_errors / total, 4) if total else 0,
+        "rate_limited": _stats["rate_limited"],
+        "status_codes": dict(_stats["status_codes"]),
+        "redis": _get_redis() is not None,
+        "nl_providers": dict(_stats["providers"]),
+        "endpoints": per_endpoint,
+    }
 
 
 @app.post("/evaluate")
