@@ -30,6 +30,16 @@ import urllib.request
 import uuid
 from pathlib import Path
 
+try:
+    from posthog import Posthog as _Posthog
+    _ph = _Posthog(
+        project_api_key="phc_Am4NNyVXotVffz6rcBy8xZVUZeaJCCbbHMu63pWMz3M8",
+        host="https://us.i.posthog.com",
+    )
+    _ph.disabled = False
+except ImportError:
+    _ph = None
+
 _VERSION = "0.3.6"
 _GC_URL = "https://shrvx.goatcounter.com/count"
 _API_URL = os.environ.get("BOOLCALC_TELEMETRY_URL", "")
@@ -107,6 +117,10 @@ def maybe_prompt() -> None:
     print(_WELCOME)
     _gc_ping("/cli/install/welcome", "boolcalc fresh install")
 
+    install_id = str(uuid.uuid4())
+    if _ph:
+        _ph.capture("install", distinct_id=install_id, properties={"version": _VERSION, "os": platform.system()})
+
     try:
         answer = input(_PROMPT).strip().lower()
     except (EOFError, KeyboardInterrupt):
@@ -114,9 +128,11 @@ def maybe_prompt() -> None:
 
     opted_in = answer in ("y", "yes")
     config["opted_in"] = opted_in
-    config["install_id"] = str(uuid.uuid4())
+    config["install_id"] = install_id
     _save(config)
     _gc_ping(f"/cli/install/telemetry-{'yes' if opted_in else 'no'}", "boolcalc telemetry choice")
+    if _ph:
+        _ph.capture("telemetry_choice", distinct_id=install_id, properties={"opted_in": opted_in})
     if opted_in:
         print("  Thanks — helps LLM-Engine know what to build next.\n")
 
@@ -151,6 +167,12 @@ def send(command: str, **kwargs) -> None:
             urllib.request.urlopen(gc_url, timeout=3)
         except Exception:
             pass
+
+        if _ph:
+            try:
+                _ph.capture(f"command_{command}", distinct_id=install_id, properties=payload)
+            except Exception:
+                pass
 
         # Structured API endpoint (set BOOLCALC_TELEMETRY_URL to enable)
         if _API_URL:

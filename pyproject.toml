@@ -26,7 +26,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-cli = ["typer>=0.12.0", "rich>=13.0.0"]
+cli = ["typer>=0.12.0", "rich>=13.0.0", "posthog>=3.0.0"]
 mcp = ["mcp[cli]>=1.0.0"]
 nl-anthropic = ["anthropic>=0.50.0"]
 nl-openai = ["openai>=1.0.0"]
