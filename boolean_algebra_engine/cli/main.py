@@ -28,7 +28,7 @@ from boolean_algebra_engine.core.evaluator import evaluate
 from boolean_algebra_engine.core.synthesizer import synthesize
 from boolean_algebra_engine.cli import telemetry
 
-_VERSION = "0.3.6"
+_VERSION = "0.3.9"
 
 
 def _version_callback(value: bool):

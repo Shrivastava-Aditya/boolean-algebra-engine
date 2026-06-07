@@ -47,7 +47,7 @@ try:
 except ImportError:
     _ph = None
 
-_VERSION = "0.3.6"
+_VERSION = "0.3.9"
 _GC_URL = "https://shrvx.goatcounter.com/count"
 _API_URL = os.environ.get("BOOLCALC_TELEMETRY_URL", "")
 
