@@ -388,7 +388,17 @@ def ask(sentence: str, provider: Provider | None = None) -> NLResult:
     try:
         parsed = json.loads(raw)
     except json.JSONDecodeError:
-        raise ValueError(f"LLM returned non-JSON: {raw}")
+        # Model sometimes appends trailing garbage after the closing brace.
+        # Extract the first complete JSON object as a fallback.
+        import re
+        m = re.search(r'\{.*\}', raw, re.DOTALL)
+        if m:
+            try:
+                parsed = json.loads(m.group())
+            except json.JSONDecodeError:
+                raise ValueError(f"LLM returned non-JSON: {raw}")
+        else:
+            raise ValueError(f"LLM returned non-JSON: {raw}")
 
     expression = parsed.get("expression", "")
     variables = parsed.get("variables", {})
