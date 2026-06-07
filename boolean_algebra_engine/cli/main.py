@@ -337,7 +337,7 @@ def _make_provider(provider_name: str, api_key: Optional[str], model: Optional[s
     if provider_name == "openai":
         return OpenAIProvider(api_key=api_key, model=model or "gpt-4o")
     if provider_name == "ollama":
-        return OllamaProvider(model=model or "llama3", base_url=base_url or "http://localhost:11434")
+        return OllamaProvider(model=model or "deepseek-r1:7b", base_url=base_url or "http://localhost:11434")
     if provider_name == "compat":
         if not base_url or not model:
             err_console.print("[red]Error:[/red] --base-url and --model required for compat provider")
@@ -350,7 +350,7 @@ def _make_provider(provider_name: str, api_key: Optional[str], model: Optional[s
 @app.command("ask")
 def nl_ask(
     sentence: str = typer.Argument(..., help="Plain English logical statement."),
-    provider: str = typer.Option("anthropic", "--provider", "-p", help="LLM provider: anthropic, openai, ollama, compat"),
+    provider: str = typer.Option("ollama", "--provider", "-p", help="LLM provider: ollama (default), anthropic, openai, compat"),
     api_key: Optional[str] = typer.Option(None, "--api-key", help="API key for the provider."),
     model: Optional[str] = typer.Option(None, "--model", help="Model ID override."),
     base_url: Optional[str] = typer.Option(None, "--base-url", help="Base URL for compat provider."),
@@ -412,7 +412,7 @@ def nl_ask(
 @app.command("check-rules")
 def nl_check_rules(
     rules: list[str] = typer.Argument(..., help="Plain English rules to check."),
-    provider: str = typer.Option("anthropic", "--provider", "-p", help="LLM provider: anthropic, openai, ollama, compat"),
+    provider: str = typer.Option("ollama", "--provider", "-p", help="LLM provider: ollama (default), anthropic, openai, compat"),
     api_key: Optional[str] = typer.Option(None, "--api-key", help="API key for the provider."),
     model: Optional[str] = typer.Option(None, "--model", help="Model ID override."),
     base_url: Optional[str] = typer.Option(None, "--base-url", help="Base URL for compat provider."),

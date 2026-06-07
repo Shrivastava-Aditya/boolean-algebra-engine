@@ -194,7 +194,7 @@ class OllamaProvider(Provider):
 
     def __init__(
         self,
-        model: str = "llama3",
+        model: str = "deepseek-r1:7b",
         base_url: str = "http://localhost:11434",
     ):
         self.model = model
@@ -274,16 +274,33 @@ class OpenAICompatProvider(Provider):
         return response.choices[0].message.content.strip()
 
 
+def _ollama_running(base_url: str = "http://localhost:11434") -> bool:
+    """Return True if Ollama is reachable."""
+    import urllib.request
+    try:
+        urllib.request.urlopen(f"{base_url}/api/tags", timeout=2)
+        return True
+    except Exception:
+        return False
+
+
 def _default_provider() -> Provider:
-    """Return AnthropicProvider if key is set, else raise a clear error."""
+    """Auto-detect: Ollama first, then Anthropic, then clear error."""
+    if _ollama_running():
+        return OllamaProvider()
     if os.environ.get("ANTHROPIC_API_KEY"):
         return AnthropicProvider()
+    if os.environ.get("OPENAI_API_KEY"):
+        return OpenAIProvider()
     raise ValueError(
-        "No provider specified and ANTHROPIC_API_KEY is not set.\n"
-        "Pass a provider explicitly:\n"
-        "  ask(sentence, provider=AnthropicProvider(api_key='...'))\n"
-        "  ask(sentence, provider=OpenAIProvider(api_key='...'))\n"
-        "  ask(sentence, provider=OllamaProvider(model='llama3'))"
+        "No provider available.\n"
+        "Easiest option — run Ollama locally (free, no API key):\n"
+        "  1. Install: https://ollama.com\n"
+        "  2. Pull model: ollama pull deepseek-r1:7b\n"
+        "  3. Re-run your command\n\n"
+        "Or set an API key:\n"
+        "  export ANTHROPIC_API_KEY=...\n"
+        "  export OPENAI_API_KEY=..."
     )
 
 
