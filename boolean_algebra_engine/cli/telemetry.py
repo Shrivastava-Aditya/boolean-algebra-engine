@@ -30,7 +30,7 @@ import urllib.request
 import uuid
 from pathlib import Path
 
-_VERSION = "0.3.5"
+_VERSION = "0.3.6"
 _GC_URL = "https://shrvx.goatcounter.com/count"
 _API_URL = os.environ.get("BOOLCALC_TELEMETRY_URL", "")
 
@@ -67,6 +67,17 @@ def _save(config: dict) -> None:
         pass
 
 
+def _gc_ping(path: str, title: str) -> None:
+    """Fire-and-forget anonymous GoatCounter hit. Never blocks, never raises."""
+    def _fire():
+        try:
+            url = f"{_GC_URL}?p={urllib.request.quote(path)}&t={urllib.request.quote(title)}"
+            urllib.request.urlopen(url, timeout=3)
+        except Exception:
+            pass
+    threading.Thread(target=_fire, daemon=True).start()
+
+
 def maybe_nudge() -> None:
     """Show a dim one-liner nudge every N runs, at most _NUDGE_MAX times."""
     if os.environ.get("BOOLCALC_NO_TELEMETRY"):
@@ -80,6 +91,7 @@ def maybe_nudge() -> None:
         return
     if run_count % _NUDGE_EVERY == 0:
         print(_NUDGE)
+        _gc_ping(f"/cli/nudge/{nudge_count + 1}", f"boolcalc nudge #{nudge_count + 1}")
         config["nudge_count"] = nudge_count + 1
         _save(config)
 
@@ -93,6 +105,7 @@ def maybe_prompt() -> None:
         return
 
     print(_WELCOME)
+    _gc_ping("/cli/install/welcome", "boolcalc fresh install")
 
     try:
         answer = input(_PROMPT).strip().lower()
@@ -103,6 +116,7 @@ def maybe_prompt() -> None:
     config["opted_in"] = opted_in
     config["install_id"] = str(uuid.uuid4())
     _save(config)
+    _gc_ping(f"/cli/install/telemetry-{'yes' if opted_in else 'no'}", "boolcalc telemetry choice")
     if opted_in:
         print("  Thanks — helps LLM-Engine know what to build next.\n")
 

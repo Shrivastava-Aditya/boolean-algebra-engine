@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.6 — 2026-06-07
+- GoatCounter pings for fresh-install welcome, telemetry opt-in/out choice, and recurring nudge — visible at `shrvx.goatcounter.com` under `/cli/install/*` and `/cli/nudge/*`
+
 ## v0.3.5 — 2026-06-07
 - Graceful error when `boolcalc` is run without `[cli]` extras — friendly message instead of traceback
 - Entry point moved to thin `cli/entry.py` wrapper so `main.py` is only imported when typer/rich are present
