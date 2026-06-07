@@ -39,7 +39,7 @@ _CONFIG_FILE = _CONFIG_DIR / "telemetry.json"
 
 _PROMPT = """\
 
-  Help improve Quine — share anonymous usage stats? (y/N)
+  Help improve LLM-Engine — share anonymous usage stats? (y/N)
   What's sent: command used, OS, Python version. Nothing personal.
   Opt out anytime: set BOOLCALC_NO_TELEMETRY=1 or edit
   ~/.config/boolcalc/telemetry.json
@@ -80,7 +80,7 @@ def maybe_prompt() -> None:
     config["install_id"] = str(uuid.uuid4())
     _save(config)
     if opted_in:
-        print("  Thanks — helps us know what to build next.\n")
+        print("  Thanks — helps LLM-Engine know what to build next.\n")
 
 
 def send(command: str, **kwargs) -> None:
