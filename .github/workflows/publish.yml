@@ -12,6 +12,7 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     permissions:
       contents: write      # create GitHub releases
+      id-token: write      # Trusted Publishing (PyPI OIDC — no stored token)
       packages: write      # push to GHCR
 
     steps:
@@ -41,7 +42,6 @@ jobs:
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
           skip-existing: true
 
       - name: Create GitHub release
