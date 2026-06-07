@@ -26,7 +26,7 @@ jobs:
       - name: Patch image URLs to use git tag
         env:
           TAG: ${{ github.ref_name }}
-          REPO: Shrivastava-Aditya/bool-LLM-ngn
+          REPO: Shrivastava-Aditya/boolean-algebra-engine-python
         run: |
           sed -i "s|https://raw.githubusercontent.com/${REPO}/[^/]*/images/|https://raw.githubusercontent.com/${REPO}/${TAG}/images/|g" README.md
 
