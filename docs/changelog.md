@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.3.1 — 2026-06-07
+- Rate limiting on API: 10 req/min per IP on `/nl/*` endpoints, 60 req/min on engine endpoints — returns 429 on breach
+- `boolcalc --help` no longer exposes the internal `main` subcommand
+- `slowapi>=0.1.9` added to `api` and `api-cache` extras
+
 ## v0.3.0 — 2026-06-07
 Fix CLI entry point and clean up package namespace.
 
