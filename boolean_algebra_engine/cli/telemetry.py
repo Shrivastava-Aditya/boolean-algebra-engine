@@ -1,27 +1,34 @@
 """
-cli/telemetry.py — opt-in anonymous usage telemetry for boolcalc.
+cli/telemetry.py — opt-in anonymous usage telemetry for Quine (boolcalc).
 
 First run: user is prompted once. Choice is saved to
   ~/.config/boolcalc/telemetry.json
 
-What is sent (if opted in):
+No data is collected or transmitted before the user opts in.
+
+What is sent (only if opted in):
   - Random install ID (UUID, generated once, never linked to identity)
-  - Command name (evaluate / simplify / ask / check-rules / etc.)
-  - OS (Linux / Darwin / Windows)
+  - Command name (evaluate / ask / check-rules / etc.)
+  - OS platform (Linux / Darwin / Windows)
   - Python version (e.g. 3.12)
   - Package version
   - Variable count in expression (not the expression itself)
 
 What is never sent:
   - The expression or rules text
-  - IP address (not included in payload)
   - Any user-identifiable information
 
-Telemetry goes to GoatCounter (already in use for web analytics) and
-optionally to a structured API endpoint via BOOLCALC_TELEMETRY_URL.
+Data goes to PostHog (posthog.com) and GoatCounter (goatcounter.com),
+both used for anonymous product analytics. PostHog may resolve your IP
+for approximate GeoIP (country-level) and then discards it.
+
+Opt out anytime:
+  - Set BOOLCALC_NO_TELEMETRY=1
+  - Or edit ~/.config/boolcalc/telemetry.json and set opted_in to false
 """
 from __future__ import annotations
 
+import atexit
 import json
 import os
 import platform
@@ -31,7 +38,6 @@ import uuid
 from pathlib import Path
 
 try:
-    import atexit
     from posthog import Posthog as _Posthog
     _ph = _Posthog(
         project_api_key="phc_Am4NNyVXotVffz6rcBy8xZVUZeaJCCbbHMu63pWMz3M8",
@@ -50,15 +56,16 @@ _CONFIG_FILE = _CONFIG_DIR / "telemetry.json"
 
 _PROMPT = """\
 
-  Help improve LLM-Engine — share anonymous usage stats? (y/N)
+  Help improve Quine — share anonymous usage stats? (y/N)
   What's sent: command used, OS, Python version. Nothing personal.
+  Data goes to PostHog and GoatCounter (anonymous analytics).
   Opt out anytime: set BOOLCALC_NO_TELEMETRY=1 or edit
   ~/.config/boolcalc/telemetry.json
 
   > """
 
-_WELCOME = "  \033[2m→ Thanks for installing LLM-Engine! Star or open an issue: github.com/Shrivastava-Aditya/bool-LLM-ngn\033[0m"
-_NUDGE = "  \033[2m→ Finding this useful? Star or open an issue: github.com/Shrivastava-Aditya/bool-LLM-ngn\033[0m"
+_WELCOME = "  \033[2m→ Thanks for installing Quine! Star or open an issue: github.com/Shrivastava-Aditya/bool-LLM-ngn\033[0m"
+_NUDGE = "  \033[2m→ Finding Quine useful? Star or open an issue: github.com/Shrivastava-Aditya/bool-LLM-ngn\033[0m"
 _NUDGE_EVERY = 10   # show every N runs
 _NUDGE_MAX   = 3    # stop after showing this many times
 
@@ -102,7 +109,8 @@ def maybe_nudge() -> None:
         return
     if run_count % _NUDGE_EVERY == 0:
         print(_NUDGE)
-        _gc_ping(f"/cli/nudge/{nudge_count + 1}", f"boolcalc nudge #{nudge_count + 1}")
+        if config.get("opted_in"):
+            _gc_ping(f"/cli/nudge/{nudge_count + 1}", f"boolcalc nudge #{nudge_count + 1}")
         config["nudge_count"] = nudge_count + 1
         _save(config)
 
@@ -116,11 +124,8 @@ def maybe_prompt() -> None:
         return
 
     print(_WELCOME)
-    _gc_ping("/cli/install/welcome", "boolcalc fresh install")
 
     install_id = str(uuid.uuid4())
-    if _ph:
-        _ph.capture("install", distinct_id=install_id, properties={"version": _VERSION, "os": platform.system()})
 
     try:
         answer = input(_PROMPT).strip().lower()
@@ -131,11 +136,15 @@ def maybe_prompt() -> None:
     config["opted_in"] = opted_in
     config["install_id"] = install_id
     _save(config)
-    _gc_ping(f"/cli/install/telemetry-{'yes' if opted_in else 'no'}", "boolcalc telemetry choice")
-    if _ph:
-        _ph.capture("telemetry_choice", distinct_id=install_id, properties={"opted_in": opted_in})
+
     if opted_in:
-        print("  Thanks — helps LLM-Engine know what to build next.\n")
+        if _ph:
+            _ph.capture("install", distinct_id=install_id, properties={"version": _VERSION, "os": platform.system()})
+            _ph.capture("telemetry_choice", distinct_id=install_id, properties={"opted_in": True})
+        _gc_ping("/cli/install/telemetry-yes", "boolcalc telemetry yes")
+        print("  Thanks — helps Quine know what to build next.\n")
+    else:
+        _gc_ping("/cli/install/telemetry-no", "boolcalc telemetry no")
 
 
 def send(command: str, **kwargs) -> None:
@@ -166,7 +175,6 @@ def send(command: str, **kwargs) -> None:
             pass
 
     def _fire():
-        # GoatCounter: structured path gives OS/command/python breakdown in dashboard
         try:
             path = f"/cli/{command}/{os_name}/{py_version}"
             title = f"boolcalc {command}"
@@ -175,7 +183,6 @@ def send(command: str, **kwargs) -> None:
         except Exception:
             pass
 
-        # Structured API endpoint (set BOOLCALC_TELEMETRY_URL to enable)
         if _API_URL:
             try:
                 data = json.dumps(payload).encode()
