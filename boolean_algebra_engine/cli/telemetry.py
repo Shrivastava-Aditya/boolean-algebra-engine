@@ -159,6 +159,12 @@ def send(command: str, **kwargs) -> None:
         **{k: v for k, v in kwargs.items() if v is not None},
     }
 
+    if _ph:
+        try:
+            _ph.capture(f"command_{command}", distinct_id=install_id, properties=payload)
+        except Exception:
+            pass
+
     def _fire():
         # GoatCounter: structured path gives OS/command/python breakdown in dashboard
         try:
@@ -168,12 +174,6 @@ def send(command: str, **kwargs) -> None:
             urllib.request.urlopen(gc_url, timeout=3)
         except Exception:
             pass
-
-        if _ph:
-            try:
-                _ph.capture(f"command_{command}", distinct_id=install_id, properties=payload)
-            except Exception:
-                pass
 
         # Structured API endpoint (set BOOLCALC_TELEMETRY_URL to enable)
         if _API_URL:
