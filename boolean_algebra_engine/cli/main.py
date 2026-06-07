@@ -151,6 +151,8 @@ def main(
         else:
             print(out)
 
+    telemetry.maybe_nudge()
+
 
 def _build_output(table, eval_metrics, synth_expr, synth_metrics,
                   format, show_minterms, show_maxterms, show_metrics) -> str:
@@ -384,6 +386,7 @@ def nl_ask(
     console.print(f"  Satisfiable: {'[green]Yes[/green]' if result.satisfiable else '[red]No[/red]'}")
     console.print(f"  Tautology  : {'[green]Yes[/green]' if result.tautology else '[red]No[/red]'}")
     console.print(f"\n  [bold]Explanation:[/bold]\n  {result.explanation}\n")
+    telemetry.maybe_nudge()
 
 
 @app.command("check-rules")
@@ -409,6 +412,7 @@ def nl_check_rules(
     telemetry.send("check-rules", provider=provider, rule_count=len(rules))
 
     print(json.dumps(result, indent=2))
+    telemetry.maybe_nudge()
 
 
 _SUBCOMMANDS = {"ask", "check-rules", "main"}

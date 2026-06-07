@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.3.3 — 2026-06-07
+- Non-intrusive GitHub feedback nudge — dim one-liner shown every 10 runs, max 3 times ever, never blocking
+- Nudge tracks `run_count` and `nudge_count` in `~/.config/boolcalc/telemetry.json`
+- Respects `BOOLCALC_NO_TELEMETRY=1`
+
 ## v0.3.2 — 2026-06-07
 - Opt-in anonymous CLI telemetry — first-run prompt, saves to `~/.config/boolcalc/telemetry.json`
 - Sends: command used, OS, Python version, variable/rule count, anonymous install ID. Never sends expressions or user data

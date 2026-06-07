@@ -30,7 +30,7 @@ import urllib.request
 import uuid
 from pathlib import Path
 
-_VERSION = "0.3.2"
+_VERSION = "0.3.3"
 _GC_URL = "https://shrvx.goatcounter.com/count"
 _API_URL = os.environ.get("BOOLCALC_TELEMETRY_URL", "")
 
@@ -46,6 +46,10 @@ _PROMPT = """\
 
   > """
 
+_NUDGE = "  \033[2m→ Finding this useful? Star or open an issue: github.com/Shrivastava-Aditya/bool-LLM-ngn\033[0m"
+_NUDGE_EVERY = 10   # show every N runs
+_NUDGE_MAX   = 3    # stop after showing this many times
+
 
 def _load() -> dict:
     try:
@@ -60,6 +64,23 @@ def _save(config: dict) -> None:
         _CONFIG_FILE.write_text(json.dumps(config, indent=2))
     except Exception:
         pass
+
+
+def maybe_nudge() -> None:
+    """Show a dim one-liner nudge every N runs, at most _NUDGE_MAX times."""
+    if os.environ.get("BOOLCALC_NO_TELEMETRY"):
+        return
+    config = _load()
+    run_count = config.get("run_count", 0) + 1
+    nudge_count = config.get("nudge_count", 0)
+    config["run_count"] = run_count
+    _save(config)
+    if nudge_count >= _NUDGE_MAX:
+        return
+    if run_count % _NUDGE_EVERY == 0:
+        print(_NUDGE)
+        config["nudge_count"] = nudge_count + 1
+        _save(config)
 
 
 def maybe_prompt() -> None:
