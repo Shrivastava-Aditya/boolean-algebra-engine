@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.3.2 — 2026-06-07
+- Opt-in anonymous CLI telemetry — first-run prompt, saves to `~/.config/boolcalc/telemetry.json`
+- Sends: command used, OS, Python version, variable/rule count, anonymous install ID. Never sends expressions or user data
+- `BOOLCALC_NO_TELEMETRY=1` disables entirely
+- GoatCounter backend active immediately; `BOOLCALC_TELEMETRY_URL` enables structured API posting
+- `POST /telemetry` endpoint added to API, visible in `/stats`
+
 ## v0.3.1 — 2026-06-07
 - Rate limiting on API: 10 req/min per IP on `/nl/*` endpoints, 60 req/min on engine endpoints — returns 429 on breach
 - `boolcalc --help` no longer exposes the internal `main` subcommand
