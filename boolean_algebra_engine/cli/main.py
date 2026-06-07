@@ -118,9 +118,10 @@ def main(
         table, eval_metrics = evaluate(expr)
     except ValueError as e:
         err_console.print(f"[red]Error:[/red] {e}")
+        telemetry.send("evaluate", success=False, error=type(e).__name__)
         raise typer.Exit(1)
 
-    telemetry.send("evaluate", variable_count=len(table.variables))
+    telemetry.send("evaluate", success=True, variable_count=len(table.variables))
 
     # --- Query flags (no truth table output) ---
     if satisfiable:
