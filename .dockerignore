@@ -1,0 +1,35 @@
+.git
+.venv
+venv
+__pycache__
+*.py[cod]
+*.egg-info
+dist
+build
+.pytest_cache
+.mypy_cache
+
+# internal / dev-only files
+archive
+results
+docs/PRODUCT_DIRECTION.md
+ARCHITECTURE.md
+PUBLISHING.md
+publish.sh
+
+# large assets not needed at runtime
+images
+*.ipynb
+
+# alternative UIs and scripts
+ui
+benchmark.py
+curve.py
+curve_plot.py
+dashboard.py
+demo.py
+
+# web landing pages
+index.html
+thanks.html
+waitlist.html
