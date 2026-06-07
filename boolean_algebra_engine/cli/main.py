@@ -49,7 +49,7 @@ def _read_stdin() -> str | None:
     return None
 
 
-@app.command()
+@app.command(hidden=True)
 def main(
     expression: Optional[str] = typer.Argument(
         None,

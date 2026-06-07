@@ -12,13 +12,17 @@ Endpoints:
   GET  /health             liveness check
 
 Run:
-  uvicorn api.routes:app --host 0.0.0.0 --port 8080 --reload
+  uvicorn boolean_algebra_engine.api.routes:app --host 0.0.0.0 --port 8080 --reload
 
 Environment variables:
   ANTHROPIC_API_KEY   — for nl/* endpoints with anthropic provider
   OPENAI_API_KEY      — for nl/* endpoints with openai provider
   REDIS_URL           — optional, enables caching (default: redis://localhost:6379)
   API_KEY             — optional, enables auth (Pro/Team tiers)
+
+Rate limits (per IP):
+  /nl/*       10 requests/minute  — each call hits an external LLM
+  all others  60 requests/minute  — pure engine, no external calls
 """
 from __future__ import annotations
 
@@ -31,17 +35,25 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from boolean_algebra_engine.core.evaluator import evaluate as _evaluate
 from boolean_algebra_engine.core.synthesizer import synthesize as _synthesize
 from boolean_algebra_engine.core.parser import validate, infix_to_prefix
 from boolean_algebra_engine.core.evaluator import _evaluate_prefix
 
+limiter = Limiter(key_func=get_remote_address)
+
 app = FastAPI(
     title="Boolean Algebra Engine",
     description="Deterministic boolean logic verification API.",
-    version="0.1.0",
+    version="0.3.0",
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -171,10 +183,11 @@ def _build_provider(provider: str, api_key: Optional[str], model: Optional[str],
 @app.get("/health")
 def health():
     redis_ok = _get_redis() is not None
-    return {"status": "ok", "version": "0.1.0", "redis": redis_ok}
+    return {"status": "ok", "version": "0.3.0", "redis": redis_ok}
 
 
 @app.post("/evaluate")
+@limiter.limit("60/minute")
 def evaluate(req: EvaluateRequest, request: Request, response: Response):
     _check_auth(request)
 
@@ -211,6 +224,7 @@ def evaluate(req: EvaluateRequest, request: Request, response: Response):
 
 
 @app.post("/simplify")
+@limiter.limit("60/minute")
 def simplify(req: SimplifyRequest, request: Request, response: Response):
     _check_auth(request)
 
@@ -241,6 +255,7 @@ def simplify(req: SimplifyRequest, request: Request, response: Response):
 
 
 @app.post("/equivalent")
+@limiter.limit("60/minute")
 def equivalent(req: EquivalentRequest, request: Request, response: Response):
     _check_auth(request)
 
@@ -289,6 +304,7 @@ def equivalent(req: EquivalentRequest, request: Request, response: Response):
 
 
 @app.post("/satisfiable")
+@limiter.limit("60/minute")
 def satisfiable(req: SatisfiableRequest, request: Request, response: Response):
     _check_auth(request)
 
@@ -314,6 +330,7 @@ def satisfiable(req: SatisfiableRequest, request: Request, response: Response):
 
 
 @app.post("/check-rules")
+@limiter.limit("60/minute")
 def check_rules(req: CheckRulesRequest, request: Request, response: Response):
     _check_auth(request)
 
@@ -332,6 +349,7 @@ def check_rules(req: CheckRulesRequest, request: Request, response: Response):
 
 
 @app.post("/nl/ask")
+@limiter.limit("10/minute")
 def nl_ask(req: NLAskRequest, request: Request, response: Response):
     _check_auth(request)
 
@@ -370,6 +388,7 @@ def nl_ask(req: NLAskRequest, request: Request, response: Response):
 
 
 @app.post("/nl/check-rules")
+@limiter.limit("10/minute")
 def nl_check_rules(req: NLCheckRulesRequest, request: Request, response: Response):
     _check_auth(request)
 
