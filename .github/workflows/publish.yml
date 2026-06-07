@@ -10,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write      # create GitHub releases
-      id-token: write      # Trusted Publishing (PyPI OIDC — no stored token)
 
     steps:
       - uses: actions/checkout@v4
@@ -36,8 +35,10 @@ jobs:
       - name: Restore README
         run: git checkout README.md
 
-      - name: Publish to PyPI (Trusted Publishing)
+      - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
 
       - name: Create GitHub release
         env:
