@@ -4,6 +4,74 @@
 
 ---
 
+## Dev Environment — VM Bootstrap
+
+Current dev server: Oracle Linux 9.7, kernel `6.12.0` (OCI compute instance).
+Repo path: `/app/github-proj/boolean-algebra-engine-python`
+
+**Zero path dependencies in the codebase.** Clone to any path on any machine and it works.
+
+### System requirements
+
+| Tool | Version on current VM | Install |
+|---|---|---|
+| Python | 3.11.13 | `dnf install python3.11` or pyenv |
+| pip | 26.1.2 | `python3.11 -m ensurepip --upgrade` |
+| git | 2.47.3 | `dnf install git` |
+
+### Bootstrap a new dev machine
+
+```bash
+# 1. Clone both remotes
+git clone git@github.com:Shrivastava-Aditya/boolean-algebra-engine-python.git
+cd boolean-algebra-engine-python
+git remote add public https://github.com/Shrivastava-Aditya/bool-LLM-ngn.git
+
+# 2. Install release tools (global)
+pip3.11 install build twine
+
+# 3. Install package in editable mode with all extras
+pip3.11 install -e ".[cli,api,nl,mcp,dev]"
+
+# 4. Verify
+boolcalc --version
+pytest tests/
+```
+
+### Installed package versions (current VM, as of 2026-06-07)
+
+| Package | Version | Installed via |
+|---|---|---|
+| `anthropic` | 0.104.1 | `[nl]` extra |
+| `fastapi` | 0.136.1 | `[api]` extra |
+| `httpx` | 0.28.1 | `[dev]` extra |
+| `mcp` | 1.27.1 | `[mcp]` extra |
+| `openai` | 2.41.0 | `[nl-openai]` extra |
+| `pytest` | 9.0.3 | `[dev]` extra |
+| `rich` | 15.0.0 | `[cli]` extra |
+| `slowapi` | 0.1.9 | `[api]` extra |
+| `twine` | 6.2.0 | global |
+| `typer` | 0.25.1 | `[cli]` extra |
+| `uvicorn` | 0.47.0 | `[api]` extra |
+| `z3-solver` | 4.16.0.0 | `[dev]` extra |
+
+### Git remotes
+
+```
+origin   git@github.com:Shrivastava-Aditya/boolean-algebra-engine-python.git  (private)
+public   https://github.com/Shrivastava-Aditya/bool-LLM-ngn.git               (public)
+```
+
+Push strategy:
+- `git push origin master` — always (private, full history including internal docs)
+- `git push public master` — for public releases only (omit for internal-only commits)
+
+### PyPI publishing
+
+Uses Trusted Publishing (OIDC) — no stored token on the VM. `publish.sh` calls `twine upload` which authenticates via GitHub Actions trust. To publish manually from a new machine, configure PyPI OIDC for that machine or use an API token from `pypi.org/manage/account/token/`.
+
+---
+
 ## Repositories
 
 | Repo | Remote | Visibility | Purpose |
