@@ -354,6 +354,193 @@ Five tools Claude can call mid-conversation:
 
 ---
 
+## NL Layer — plain English to verified boolean logic
+
+The NL layer lets you describe a rule in plain English and get back a fully verified boolean result — truth table, minimal form, satisfiability, and a plain English explanation. It calls an LLM twice (parse → explain) and runs the core engine in between.
+
+```
+"alarm triggers if door open or window open, but not if alarm is disabled"
+        ↓  LLM (parse)
+   (D+W).!S   ← boolean expression
+        ↓  core engine
+   truth table · minimal form · satisfiability
+        ↓  LLM (explain)
+   "The alarm triggers in 3 of 4 combinations. Disabling suppresses all outputs."
+```
+
+### Install
+
+```bash
+# With Anthropic (Claude)
+pip install "boolean-algebra-engine[nl-anthropic]"
+
+# With OpenAI (GPT)
+pip install "boolean-algebra-engine[nl-openai]"
+
+# With Ollama (local, free, no API key)
+pip install boolean-algebra-engine   # no extra deps — uses stdlib urllib
+```
+
+### Quickstart
+
+```python
+from boolean_algebra_engine.nl.nl import ask
+
+# Auto-detects provider: Ollama (if running) → Anthropic → OpenAI
+result = ask("alarm on if door open or window open, but not if system disabled")
+
+print(result.expression)   # (D+W).!S
+print(result.minimal)      # D.!S+W.!S
+print(result.satisfiable)  # True
+print(result.variables)    # {'D': 'door is open', 'W': 'window is open', 'S': 'system disabled'}
+print(result.explanation)  # plain English summary from the LLM
+```
+
+### Choosing a provider
+
+**Ollama — local, free, no API key**
+
+```python
+from boolean_algebra_engine.nl.nl import ask, OllamaProvider
+
+# Default model: deepseek-r1:latest
+result = ask("lights on when switch is up", provider=OllamaProvider())
+
+# Specific model
+result = ask("...", provider=OllamaProvider(model="deepseek-r1:1.5b"))
+
+# Custom host
+result = ask("...", provider=OllamaProvider(model="llama3.2:3b", base_url="http://192.168.1.10:11434"))
+```
+
+Pull a model first: `ollama pull deepseek-r1:latest`
+
+**Anthropic (Claude)**
+
+```python
+from boolean_algebra_engine.nl.nl import ask, AnthropicProvider
+
+result = ask("...", provider=AnthropicProvider())                          # uses ANTHROPIC_API_KEY env var
+result = ask("...", provider=AnthropicProvider(model="claude-opus-4-7"))  # specific model
+result = ask("...", provider=AnthropicProvider(api_key="sk-ant-..."))     # explicit key
+```
+
+**OpenAI (GPT)**
+
+```python
+from boolean_algebra_engine.nl.nl import ask, OpenAIProvider
+
+result = ask("...", provider=OpenAIProvider())                      # uses OPENAI_API_KEY, defaults to gpt-4o
+result = ask("...", provider=OpenAIProvider(model="gpt-4-turbo"))
+```
+
+**Any OpenAI-compatible endpoint — Groq, Together, LM Studio, vLLM**
+
+```python
+from boolean_algebra_engine.nl.nl import ask, OpenAICompatProvider
+import os
+
+# Groq
+result = ask("...", provider=OpenAICompatProvider(
+    api_key=os.environ["GROQ_API_KEY"],
+    base_url="https://api.groq.com/openai/v1",
+    model="llama3-8b-8192",
+))
+
+# Local LM Studio
+result = ask("...", provider=OpenAICompatProvider(
+    api_key="lm-studio",
+    base_url="http://localhost:1234/v1",
+    model="local-model",
+))
+```
+
+### Plug in your own LLM
+
+Implement one method and the full pipeline works with your model:
+
+```python
+from boolean_algebra_engine.nl.nl import ask, Provider
+
+class MyProvider(Provider):
+    def complete(self, system: str, user: str, max_tokens: int = 512) -> str:
+        # Call your model here — return the response as a plain string
+        response = my_llm.generate(system_prompt=system, user_message=user, max_tokens=max_tokens)
+        return response.text
+
+result = ask("access granted if admin or verified user", provider=MyProvider())
+print(result.expression)   # A+V
+```
+
+`complete()` is called twice per `ask()` — once to parse the sentence into JSON (boolean expression + variable map), once to explain the result in plain English. Both calls receive a system prompt and a user message.
+
+### CLI
+
+```bash
+# Ollama (auto-detected if running locally)
+boolcalc ask "alarm on if door open"
+
+# Explicit provider and model
+boolcalc ask "alarm on if door open" --provider ollama --model deepseek-r1:latest
+boolcalc ask "alarm on if door open" --provider anthropic
+boolcalc ask "alarm on if door open" --provider openai --model gpt-4o
+
+# Check multiple rules for conflicts
+boolcalc check-rules "access if admin" "access if verified" "no access if suspended"
+```
+
+### Return type
+
+```python
+@dataclass
+class NLResult:
+    input_sentence: str    # original English sentence
+    expression: str        # parsed boolean expression  e.g. "A+B.!C"
+    variables: dict        # {'A': 'user is admin', 'B': 'request is read-only', ...}
+    minimal: str           # Quine-McCluskey minimal form
+    satisfiable: bool      # True if any input combination makes it True
+    tautology: bool        # True if always True
+    contradiction: bool    # True if always False
+    minterms: list[int]    # row indices where output = 1
+    maxterms: list[int]    # row indices where output = 0
+    explanation: str       # plain English explanation from the LLM
+    rows: list[dict]       # full truth table  e.g. [{'A': 0, 'B': 1, 'output': 1}, ...]
+```
+
+### check_rules() — audit a rule set
+
+```python
+from boolean_algebra_engine.nl.nl import check_rules, OllamaProvider
+
+result = check_rules([
+    "access granted if admin",
+    "access denied if not verified",
+    "access granted if verified and read-only",
+], provider=OllamaProvider())
+
+# Returns per-rule analysis + pairwise conflict/equivalence checks
+for rule in result["rules"]:
+    print(rule["original_rule"], "→", rule["expression"], "| contradiction:", rule["contradiction"])
+```
+
+---
+
+## NL Layer — updates in this release
+
+**Branch: `NL-Layer-Live`**
+
+| Fix | Detail |
+|---|---|
+| Default model upgraded | `deepseek-r1:7b` → `deepseek-r1:latest` (8b) |
+| Chain-of-thought disabled for Ollama | `think: false` in the API payload — prevents the model from exhausting `num_predict` on internal reasoning before producing JSON |
+| CPU-friendly inference defaults | `num_ctx: 2048`, `num_thread: 2` — avoids loading a 128K context window on memory-constrained hosts |
+| Markdown fence stripping | Models often wrap JSON in ` ```json ``` ` blocks despite instructions; stripped automatically before parsing |
+| Operator normalization | LLMs output `\|`, `&`, `\|\|`, `&&`, `AND`, `OR`, `XOR`, `~` — all remapped to engine-canonical `+`, `.`, `^`, `!` before validation |
+
+These fixes apply to Ollama-backed deployments. Anthropic and OpenAI providers are unaffected.
+
+---
+
 ## Operators
 
 | Symbol | Operation | Precedence |
