@@ -1,0 +1,133 @@
+# boolean-algebra-engine
+
+> Deterministic boolean logic evaluation, simplification, and natural-language parsing for Python.
+> Install: `pip install boolean-algebra-engine`
+
+A pure-Python engine that evaluates boolean expressions to full truth tables, simplifies them
+via Quine-McCluskey, checks satisfiability/equivalence, and translates plain English rules into
+verified boolean logic using any LLM (Claude, GPT-4o, Ollama, or any OpenAI-compatible endpoint).
+No external dependencies for the core — bring your own LLM only for the NL layer.
+
+## Quick start
+
+```python
+from boolean_algebra_engine import evaluate, synthesize
+
+# Operators: ! NOT  . AND  ^ XOR  + OR
+# Variables: uppercase letters A-Z only, no spaces
+table, metrics = evaluate("A.(B+C)")
+print(table.satisfiable)   # True
+print(table.minterms)      # [5, 6, 7]
+
+minimal, _ = synthesize(table)
+print(minimal)             # A.B+A.C  (or equivalent minimal SOP)
+```
+
+## Operator syntax (critical — LLMs often guess wrong)
+
+| Operator | Symbol | Example       |
+|----------|--------|---------------|
+| NOT      | `!`    | `!A`          |
+| AND      | `.`    | `A.B`         |
+| XOR      | `^`    | `A^B`         |
+| OR       | `+`    | `A+B`         |
+
+Precedence (high → low): `!` > `.` > `^` > `+`. Parentheses override.
+Variables **must** be uppercase single letters. Expressions **must not** contain spaces.
+
+## Core Python API
+
+```python
+from boolean_algebra_engine import evaluate, synthesize, validate
+from boolean_algebra_engine import TruthTable, TruthTableRow, PerformanceMetrics
+
+# evaluate(expression) → (TruthTable, PerformanceMetrics)
+table, metrics = evaluate("A.B+!C")
+table.variables        # ['A', 'B', 'C']
+table.rows             # list[TruthTableRow]  — 2^n rows
+table.satisfiable      # bool
+table.tautology        # bool
+table.minterms         # list[int]  — row indices where output=1
+table.maxterms         # list[int]  — row indices where output=0
+
+# synthesize(truth_table) → (str, PerformanceMetrics)
+# Returns minimal sum-of-products expression; '0' for contradiction, '1' for tautology
+minimal, metrics = synthesize(table)
+
+# validate(expression) → None | str  (None = valid, str = error message)
+err = validate("A.B")   # None
+err = validate("A B")   # "Expression must not contain spaces"
+```
+
+## Natural Language layer
+
+```python
+from boolean_algebra_engine.nl.nl import ask, AnthropicProvider, OpenAIProvider, OllamaProvider
+
+# Claude (requires: pip install anthropic  +  ANTHROPIC_API_KEY env var)
+result = ask("door opens when key valid and not locked",
+             provider=AnthropicProvider())
+
+# GPT-4o (requires: pip install openai  +  OPENAI_API_KEY env var)
+result = ask("...", provider=OpenAIProvider())
+
+# Local Ollama — no API key, free (requires Ollama running locally)
+result = ask("...", provider=OllamaProvider(model="llama3"))
+
+# result.expression    → boolean expression string, e.g. "K.!L"
+# result.variables     → {"K": "key is valid", "L": "door is locked"}
+# result.minimal       → minimal equivalent expression
+# result.satisfiable   → bool
+# result.tautology     → bool
+# result.contradiction → bool
+# result.explanation   → plain English explanation from LLM
+# result.rows          → list of truth table rows as dicts
+```
+
+## REST API
+
+Start: `pip install "boolean-algebra-engine[api]"` then `uvicorn boolean_algebra_engine.api.routes:app --port 8000`
+Or Docker: `docker run -p 8000:8000 shrvx/bool-llm-ngn:latest`
+
+```
+POST /evaluate          {"expression": "A.B+C"}   → truth table
+POST /simplify          {"expression": "A.B+A.!B"} → {"minimal": "A"}
+POST /equivalent        {"expression1": "A.B", "expression2": "B.A"} → {"equivalent": true}
+POST /satisfiable       {"expression": "A.!A"}    → {"satisfiable": false}
+POST /check-rules       {"rules": ["A.B", "!A+!B"]} → contradiction/conflict audit
+POST /nl/ask            {"sentence": "...", "provider": "anthropic"} → NLResult
+POST /nl/check-rules    {"rules": ["...", "..."], "provider": "ollama"} → audit
+GET  /health
+GET  /stats
+```
+
+Rate limits: `/nl/*` 10 req/min per IP; all others 60 req/min.
+Auth: set `API_KEY` env var → endpoints require `X-API-Key` header.
+
+## MCP server (Claude Desktop / Claude Code)
+
+```bash
+pip install "boolean-algebra-engine[mcp]"
+python3 -m boolean_algebra_engine.mcp.server
+```
+
+Tools exposed: `evaluate`, `simplify`, `equivalent`, `satisfiable`, `check_prompt_logic`.
+Use these to let Claude verify its own boolean reasoning mid-conversation.
+
+## Install options
+
+```bash
+pip install boolean-algebra-engine           # core only
+pip install "boolean-algebra-engine[cli]"   # + boolcalc CLI
+pip install "boolean-algebra-engine[api]"   # + FastAPI server
+pip install "boolean-algebra-engine[mcp]"   # + MCP server
+pip install "boolean-algebra-engine[nl-anthropic]"  # + Claude NL layer
+pip install "boolean-algebra-engine[nl-openai]"     # + OpenAI NL layer
+```
+
+## Links
+
+- PyPI: https://pypi.org/project/boolean-algebra-engine/
+- GitHub: https://github.com/Shrivastava-Aditya/boolean-algebra-engine-python
+- Docker: https://hub.docker.com/r/shrvx/bool-llm-ngn
+- Full API reference: https://raw.githubusercontent.com/Shrivastava-Aditya/boolean-algebra-engine-python/master/llms-full.txt

@@ -1,0 +1,590 @@
+# boolean-algebra-engine — Full API Reference
+
+Package: boolean-algebra-engine
+PyPI: https://pypi.org/project/boolean-algebra-engine/
+GitHub: https://github.com/Shrivastava-Aditya/boolean-algebra-engine-python
+Docker: docker pull shrvx/bool-llm-ngn:latest
+License: AGPL-3.0
+Python: >=3.10
+
+---
+
+## Expression Syntax
+
+Variables must be single uppercase letters A–Z. No spaces allowed in expressions.
+
+| Operator | Symbol | Precedence | Example       | Meaning               |
+|----------|--------|------------|---------------|-----------------------|
+| NOT      | `!`    | 4 (high)   | `!A`          | logical complement    |
+| AND      | `.`    | 3          | `A.B`         | conjunction           |
+| XOR      | `^`    | 2          | `A^B`         | exclusive or          |
+| OR       | `+`    | 1 (low)    | `A+B`         | disjunction           |
+
+Parentheses override precedence. Examples:
+- `A.(B+C)` — A AND (B OR C)
+- `!(A.B)` — NOT (A AND B)
+- `A^B^C` — A XOR B XOR C
+- `A.B+!A.C` — (A AND B) OR (NOT A AND C)
+
+Common mistakes LLMs make:
+- Wrong: `A && B`, `A & B`, `A AND B` — these are NOT valid
+- Wrong: `A || B`, `A | B`, `A OR B` — these are NOT valid
+- Wrong: `~A`, `NOT A` — these are NOT valid
+- Correct: `A.B`, `A+B`, `!A`
+
+---
+
+## Installation
+
+```bash
+# Core (no external dependencies)
+pip install boolean-algebra-engine
+
+# With extras
+pip install "boolean-algebra-engine[cli]"          # boolcalc CLI (typer, rich)
+pip install "boolean-algebra-engine[api]"          # FastAPI REST server
+pip install "boolean-algebra-engine[mcp]"          # MCP server for AI assistants
+pip install "boolean-algebra-engine[nl-anthropic]" # NL layer with Claude
+pip install "boolean-algebra-engine[nl-openai]"    # NL layer with OpenAI
+pip install "boolean-algebra-engine[api-cache]"    # API + Redis caching
+
+# All at once
+pip install "boolean-algebra-engine[api,mcp,nl-anthropic,nl-openai]"
+```
+
+---
+
+## Core Python API
+
+### `evaluate(expression) → (TruthTable, PerformanceMetrics)`
+
+```python
+from boolean_algebra_engine import evaluate
+
+table, metrics = evaluate("A.(B+C)")
+```
+
+Returns the full truth table for the expression.
+
+**TruthTable fields:**
+- `expression: str` — original expression string
+- `variables: list[str]` — sorted list of unique variables, e.g. `['A', 'B', 'C']`
+- `rows: list[TruthTableRow]` — all 2^n rows, ordered from all-0 to all-1 inputs
+- `satisfiable: bool` — True if any row outputs 1
+- `tautology: bool` — True if every row outputs 1
+- `minterms: list[int]` — row indices where output = 1
+- `maxterms: list[int]` — row indices where output = 0
+
+**TruthTableRow fields:**
+- `inputs: dict[str, int]` — variable assignments for this row, e.g. `{'A': 1, 'B': 0, 'C': 1}`
+- `output: int` — 0 or 1
+
+**PerformanceMetrics fields:**
+- `eval_time_ms: float` — time to evaluate (milliseconds)
+- `peak_memory_bytes: int` — peak memory used
+- `rows_evaluated: int` — number of rows (always 2^n)
+- `synth_time_ms: float | None` — synthesis time (None if synthesize was not called)
+- `prime_implicant_count: int | None` — number of prime implicants found
+
+**Raises:** `ValueError` if the expression is invalid.
+
+**Examples:**
+```python
+table, _ = evaluate("A.B")
+# table.variables == ['A', 'B']
+# table.rows == [
+#   TruthTableRow({'A':0,'B':0}, 0),
+#   TruthTableRow({'A':0,'B':1}, 0),
+#   TruthTableRow({'A':1,'B':0}, 0),
+#   TruthTableRow({'A':1,'B':1}, 1),
+# ]
+# table.minterms == [3]
+# table.satisfiable == True
+# table.tautology == False
+
+table, _ = evaluate("A+!A")
+# table.tautology == True  (always 1)
+
+table, _ = evaluate("A.!A")
+# table.satisfiable == False  (contradiction, always 0)
+```
+
+---
+
+### `synthesize(truth_table) → (str, PerformanceMetrics)`
+
+```python
+from boolean_algebra_engine import evaluate, synthesize
+
+table, _ = evaluate("A.B+A.!B")
+minimal, metrics = synthesize(table)
+# minimal == "A"  (Quine-McCluskey found A.B+A.!B simplifies to A)
+# metrics.prime_implicant_count == 1
+```
+
+Returns the minimal sum-of-products boolean expression using Quine-McCluskey algorithm.
+
+- Returns `'0'` for contradictions (no minterms)
+- Returns `'1'` for tautologies (all rows true)
+- Otherwise returns a minimal SOP expression like `"A.B+!A.C"`
+
+**PerformanceMetrics** is the same dataclass as from `evaluate()`.
+
+**Examples:**
+```python
+table, _ = evaluate("A.B+A.!B+!A.B+!A.!B")
+minimal, _ = synthesize(table)
+# minimal == "1"  (tautology)
+
+table, _ = evaluate("A.(B+C)+A.B.!C")
+minimal, _ = synthesize(table)
+# minimal == "A.B+A.C"  (simplified)
+```
+
+---
+
+### `validate(expression) → str | None`
+
+```python
+from boolean_algebra_engine import validate
+
+err = validate("A.B+C")   # None — valid
+err = validate("A B")     # "Expression must not contain spaces"
+err = validate("")        # "Expression cannot be empty"
+err = validate("A.b")     # "Unexpected character 'b' at position 2"
+err = validate("(A.B")    # "Unmatched opening parenthesis"
+```
+
+Returns `None` if valid, or an error message string. Does not raise.
+
+---
+
+## Natural Language Layer
+
+The NL layer converts plain English into a verified boolean expression using an LLM of your choice,
+then evaluates it with the core engine and generates a plain English explanation.
+
+### Providers
+
+```python
+from boolean_algebra_engine.nl.nl import (
+    ask, check_rules,
+    AnthropicProvider,
+    OpenAIProvider,
+    OllamaProvider,
+    OpenAICompatProvider,
+)
+```
+
+**AnthropicProvider** — Claude models
+```python
+# Requires: pip install anthropic  +  ANTHROPIC_API_KEY env var
+provider = AnthropicProvider()                           # defaults to claude-sonnet-4-6
+provider = AnthropicProvider(model="claude-opus-4-7")    # use a specific model
+provider = AnthropicProvider(api_key="sk-ant-...")       # explicit key
+```
+
+**OpenAIProvider** — OpenAI models
+```python
+# Requires: pip install openai  +  OPENAI_API_KEY env var
+provider = OpenAIProvider()                   # defaults to gpt-4o
+provider = OpenAIProvider(model="gpt-4-turbo")
+```
+
+**OllamaProvider** — local models, no API key
+```python
+# Requires: Ollama installed and running (https://ollama.com)
+# ollama pull llama3  or  ollama pull deepseek-r1:7b
+provider = OllamaProvider()                                  # defaults to deepseek-r1:latest
+provider = OllamaProvider(model="llama3")
+provider = OllamaProvider(model="mistral", base_url="http://localhost:11434")
+```
+
+**OpenAICompatProvider** — any OpenAI-compatible endpoint
+```python
+import os
+# Groq
+provider = OpenAICompatProvider(
+    api_key=os.environ["GROQ_API_KEY"],
+    base_url="https://api.groq.com/openai/v1",
+    model="llama3-8b-8192",
+)
+# Together AI
+provider = OpenAICompatProvider(
+    api_key=os.environ["TOGETHER_API_KEY"],
+    base_url="https://api.together.xyz/v1",
+    model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+)
+# Local LM Studio
+provider = OpenAICompatProvider(api_key="lm-studio", base_url="http://localhost:1234/v1", model="local-model")
+```
+
+**Custom provider** — implement the `Provider` protocol:
+```python
+from boolean_algebra_engine.nl.nl import Provider
+
+class MyProvider(Provider):
+    def complete(self, system: str, user: str, max_tokens: int = 512) -> str:
+        # call your LLM, return the response text
+        return "..."
+```
+
+Auto-detect order (when no provider is passed): Ollama → ANTHROPIC_API_KEY → OPENAI_API_KEY → error.
+
+---
+
+### `ask(sentence, provider) → NLResult`
+
+```python
+result = ask("lights on when door open or motion detected but not both",
+             provider=AnthropicProvider())
+```
+
+**NLResult fields:**
+- `input_sentence: str` — original input
+- `expression: str` — parsed boolean expression, e.g. `"D^M"`
+- `variables: dict[str, str]` — e.g. `{"D": "door is open", "M": "motion detected"}`
+- `minimal: str` — minimal equivalent expression
+- `satisfiable: bool`
+- `tautology: bool`
+- `contradiction: bool`
+- `minterms: list[int]`
+- `maxterms: list[int]`
+- `explanation: str` — plain English explanation generated by the LLM
+- `rows: list[dict]` — truth table rows as dicts with variable keys + "output" key
+
+**Raises:** `ValueError` if the LLM cannot produce a valid boolean expression.
+
+**Examples:**
+```python
+result = ask("access granted if admin and authenticated, or read-only and authenticated",
+             provider=AnthropicProvider())
+# result.expression == "A.(B+C)"
+# result.variables == {"A": "authenticated", "B": "admin", "C": "read-only"}
+# result.minimal == "A.B+A.C"
+# result.satisfiable == True
+
+result = ask("user is both logged in and not logged in", provider=OllamaProvider())
+# result.contradiction == True
+# result.satisfiable == False
+```
+
+---
+
+### `check_rules(rules, provider) → dict`
+
+Check a list of plain English rules for contradictions, tautologies, and pairwise conflicts.
+
+```python
+result = check_rules([
+    "access granted if admin and authenticated",
+    "access denied if not authenticated",
+    "access granted regardless of authentication status",
+], provider=AnthropicProvider())
+
+# result["rules"] — per-rule analysis with expression, satisfiable, tautology, contradiction
+# result["pairwise"] — pairwise equivalent/conflict checks
+# result["summary"] — counts: total, contradictions, tautologies, equivalent_pairs, conflicting_pairs
+# result["parse_errors"] — rules that could not be parsed
+```
+
+---
+
+## REST API
+
+### Starting the server
+
+```bash
+pip install "boolean-algebra-engine[api]"
+uvicorn boolean_algebra_engine.api.routes:app --host 0.0.0.0 --port 8000
+
+# With Redis caching
+pip install "boolean-algebra-engine[api-cache]"
+REDIS_URL=redis://localhost:6379 uvicorn boolean_algebra_engine.api.routes:app --port 8000
+
+# Docker (no install needed)
+docker run -p 8000:8000 shrvx/bool-llm-ngn:latest
+docker run -p 8000:8000 -e ANTHROPIC_API_KEY=sk-ant-... shrvx/bool-llm-ngn:latest
+```
+
+Environment variables:
+- `ANTHROPIC_API_KEY` — for `/nl/*` with provider=anthropic
+- `OPENAI_API_KEY` — for `/nl/*` with provider=openai
+- `REDIS_URL` — optional, enables response caching (default: `redis://localhost:6379`)
+- `API_KEY` — optional, enables auth; all endpoints require `X-API-Key: <value>` header
+
+Rate limits: `/nl/*` 10 requests/minute per IP; all other endpoints 60/minute.
+
+### Endpoints
+
+**GET /health**
+```
+Response: {"status": "ok", "version": "0.3.9", "redis": false}
+```
+
+**GET /stats**
+```
+Response: {"uptime_seconds": 3600, "total_requests": 42, "error_rate": 0.0,
+           "nl_providers": {"anthropic": 5}, "endpoints": {...}}
+```
+
+**POST /evaluate**
+```json
+Request:  {"expression": "A.(B+C)"}
+Response: {
+  "expression": "A.(B+C)",
+  "variables": ["A", "B", "C"],
+  "rows": [{"A":0,"B":0,"C":0,"output":0}, ...],
+  "satisfiable": true,
+  "tautology": false,
+  "minterms": [5, 6, 7],
+  "maxterms": [0,1,2,3,4],
+  "eval_time_ms": 0.21,
+  "rows_evaluated": 8
+}
+```
+
+**POST /simplify**
+```json
+Request:  {"expression": "A.B+A.!B"}
+Response: {
+  "original": "A.B+A.!B",
+  "minimal": "A",
+  "changed": true,
+  "prime_implicant_count": 1,
+  "synth_time_ms": 0.05
+}
+```
+
+**POST /equivalent**
+```json
+Request:  {"expression1": "A.B+A.!B", "expression2": "A"}
+Response: {"equivalent": true, "expression1": "A.B+A.!B", "expression2": "A"}
+
+# When not equivalent:
+Response: {
+  "equivalent": false,
+  "expression1": "A.B",
+  "expression2": "A+B",
+  "differing_rows": [{"A":1,"B":0,"A.B":0,"A+B":1}, ...],
+  "total_differing": 2
+}
+```
+
+**POST /satisfiable**
+```json
+Request:  {"expression": "A.!A"}
+Response: {"satisfiable": false, "expression": "A.!A"}
+
+Request:  {"expression": "A.B"}
+Response: {"satisfiable": true, "expression": "A.B", "example": {"A":1,"B":1,"output":1}}
+```
+
+**POST /check-rules**
+```json
+Request:  {"rules": ["A.B", "!A+!B", "A^B"]}
+Response: {
+  "rules": [
+    {"rule":"A.B","satisfiable":true,"tautology":false,"contradiction":false,"minimal":"A.B"},
+    {"rule":"!A+!B","satisfiable":true,"tautology":false,"contradiction":false,"minimal":"!A+!B"},
+    {"rule":"A^B","satisfiable":true,"tautology":false,"contradiction":false,"minimal":"A^B"}
+  ],
+  "pairwise": [
+    {"rule1":"A.B","rule2":"!A+!B","equivalent":false,"can_both_be_true":false,"always_conflict":true},
+    ...
+  ],
+  "summary": {"total":3,"contradictions":0,"tautologies":0,"equivalent_pairs":0,"conflicting_pairs":1}
+}
+```
+
+**POST /nl/ask**
+```json
+Request: {
+  "sentence": "door opens when key valid and not locked",
+  "provider": "anthropic",
+  "api_key": null,
+  "model": null
+}
+Response: {
+  "input": "door opens when key valid and not locked",
+  "expression": "K.!L",
+  "variables": {"K": "key is valid", "L": "door is locked"},
+  "minimal": "K.!L",
+  "satisfiable": true,
+  "tautology": false,
+  "contradiction": false,
+  "minterms": [2],
+  "maxterms": [0,1,3],
+  "explanation": "The door opens only when the key is valid AND the door is not locked...",
+  "rows": [{"K":0,"L":0,"output":0},{"K":0,"L":1,"output":0},{"K":1,"L":0,"output":1},{"K":1,"L":1,"output":0}]
+}
+```
+
+Providers: `"anthropic"` | `"openai"` | `"ollama"` | `"compat"`.
+For `"ollama"`: add `"base_url": "http://localhost:11434"` and `"model": "llama3"`.
+For `"compat"`: `"base_url"` and `"model"` are required.
+
+**POST /nl/check-rules**
+```json
+Request: {
+  "rules": ["admin can always access", "unauthenticated users cannot access"],
+  "provider": "anthropic"
+}
+Response: {same structure as /check-rules but with original_rule and variables added per rule}
+```
+
+Error responses:
+- `422` — invalid expression (`{"error": "invalid_expression", "message": "...", "expression": "..."}`)
+- `401` — missing/wrong API key (when API_KEY env var is set)
+- `429` — rate limit exceeded
+- `500` — internal error (LLM failure, etc.)
+
+---
+
+## MCP Server
+
+Exposes the engine as tools that AI assistants (Claude Desktop, Claude Code) can call.
+
+**Setup:**
+```bash
+pip install "boolean-algebra-engine[mcp]"
+python3 -m boolean_algebra_engine.mcp.server   # stdio transport
+```
+
+Add to `~/.claude/claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "boolean-algebra-engine": {
+      "command": "python3",
+      "args": ["-m", "boolean_algebra_engine.mcp.server"]
+    }
+  }
+}
+```
+
+**Tools exposed:**
+
+`evaluate(expression: str) → dict`
+Returns full truth table. Same response structure as POST /evaluate.
+
+`simplify(expression: str) → dict`
+Returns minimal SOP form. Same as POST /simplify.
+
+`equivalent(expression1: str, expression2: str) → dict`
+Returns equivalence check. Same as POST /equivalent.
+
+`satisfiable(expression: str) → dict`
+Returns satisfiability. Same as POST /satisfiable.
+
+`check_prompt_logic(rules: list[str]) → dict`
+Audits a list of boolean expressions for contradictions and conflicts. Same as POST /check-rules.
+
+Use case: give Claude access to these tools so it can verify its own boolean reasoning rather than
+computing truth tables by hand (error-prone for 4+ variables).
+
+---
+
+## CLI
+
+```bash
+pip install "boolean-algebra-engine[cli]"
+
+boolcalc eval "A.(B+C)"           # truth table
+boolcalc simplify "A.B+A.!B"      # → A
+boolcalc equivalent "A.B" "B.A"   # → equivalent
+boolcalc satisfiable "A.!A"       # → not satisfiable
+boolcalc check "A.B" "!A+!B"      # audit rules for conflicts
+```
+
+---
+
+## Data model summary
+
+```
+evaluate(expr: str) → (TruthTable, PerformanceMetrics)
+synthesize(tt: TruthTable) → (str, PerformanceMetrics)
+validate(expr: str) → str | None
+
+TruthTable:
+  .expression: str
+  .variables: list[str]
+  .rows: list[TruthTableRow]
+  .satisfiable: bool
+  .tautology: bool
+  .minterms: list[int]
+  .maxterms: list[int]
+
+TruthTableRow:
+  .inputs: dict[str, int]
+  .output: int
+
+PerformanceMetrics:
+  .eval_time_ms: float
+  .synth_time_ms: float | None
+  .peak_memory_bytes: int
+  .rows_evaluated: int
+  .prime_implicant_count: int | None
+
+NLResult:
+  .input_sentence: str
+  .expression: str
+  .variables: dict[str, str]
+  .minimal: str
+  .satisfiable: bool
+  .tautology: bool
+  .contradiction: bool
+  .minterms: list[int]
+  .maxterms: list[int]
+  .explanation: str
+  .rows: list[dict]
+```
+
+---
+
+## Common patterns
+
+**Check if two rules conflict (can never both be true):**
+```python
+table, _ = evaluate("(A.B).(!A+!B)")
+if not table.satisfiable:
+    print("Rules always conflict")
+```
+
+**Find all cases where a condition is true:**
+```python
+table, _ = evaluate("A.(B^C)")
+for idx in table.minterms:
+    row = table.rows[idx]
+    print(row.inputs)   # {'A':1,'B':0,'C':1} etc.
+```
+
+**Verify a simplification is correct:**
+```python
+from boolean_algebra_engine import evaluate
+from boolean_algebra_engine.core.parser import infix_to_prefix
+from boolean_algebra_engine.core.evaluator import _evaluate_prefix
+
+def is_equivalent(e1: str, e2: str) -> bool:
+    t1, _ = evaluate(e1)
+    t2, _ = evaluate(e2)
+    return t1.minterms == t2.minterms  # only valid if same variable set
+
+# Or use the built-in:
+from boolean_algebra_engine.mcp.server import equivalent
+result = equivalent("A.B+A.!B", "A")
+assert result["equivalent"]
+```
+
+**NL layer with fallback:**
+```python
+from boolean_algebra_engine.nl.nl import ask, OllamaProvider, AnthropicProvider
+
+def get_provider():
+    try:
+        return OllamaProvider()           # free, local
+    except Exception:
+        return AnthropicProvider()        # paid fallback
+
+result = ask("user can edit if owner or admin", provider=get_provider())
+```

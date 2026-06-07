@@ -11,6 +11,7 @@ Endpoints:
   POST /nl/check-rules     list of plain English rules → analysis
   GET  /health             liveness check
   GET  /stats              request counts, error rates, response times, provider usage
+  GET  /llms.txt           machine-readable API reference for LLMs
 
 Run:
   uvicorn boolean_algebra_engine.api.routes:app --host 0.0.0.0 --port 8080 --reload
@@ -245,6 +246,15 @@ def _build_provider(provider: str, api_key: Optional[str], model: Optional[str],
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
+@app.get("/llms.txt", response_class=Response)
+def llms_txt():
+    import pathlib
+    p = pathlib.Path(__file__).parents[3] / "llms.txt"
+    if not p.exists():
+        raise HTTPException(status_code=404, detail="llms.txt not found")
+    return Response(content=p.read_text(), media_type="text/plain")
+
 
 @app.get("/health")
 def health():
