@@ -48,7 +48,7 @@ from rich import box
 console = Console()
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from core.evaluator import evaluate
+from boolean_algebra_engine.core.evaluator import evaluate
 
 # ---------------------------------------------------------------------------
 # Expression pool — used to generate test cases

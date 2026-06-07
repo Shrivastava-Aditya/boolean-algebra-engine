@@ -10,8 +10,8 @@ expression. Tests compare logical equivalence, not string equality, except where
 a specific minimal form is known (e.g. tautology → '1', contradiction → '0',
 A.B+A.!B → 'A').
 """
-from core.evaluator import evaluate
-from core.synthesizer import synthesize
+from boolean_algebra_engine.core.evaluator import evaluate
+from boolean_algebra_engine.core.synthesizer import synthesize
 
 
 def _round_trip(expression: str) -> bool:

@@ -24,8 +24,8 @@ from rich.console import Console
 from rich.table import Table
 from rich import box
 
-from core.evaluator import evaluate
-from core.synthesizer import synthesize
+from boolean_algebra_engine.core.evaluator import evaluate
+from boolean_algebra_engine.core.synthesizer import synthesize
 
 app = typer.Typer(
     name="boolcalc",
@@ -308,7 +308,7 @@ def _repl():
 
 
 def _make_provider(provider_name: str, api_key: Optional[str], model: Optional[str], base_url: Optional[str]):
-    from nl.nl import AnthropicProvider, OpenAIProvider, OllamaProvider, OpenAICompatProvider
+    from boolean_algebra_engine.nl.nl import AnthropicProvider, OpenAIProvider, OllamaProvider, OpenAICompatProvider
     if provider_name == "anthropic":
         return AnthropicProvider(api_key=api_key, model=model or "claude-sonnet-4-6")
     if provider_name == "openai":
@@ -335,7 +335,7 @@ def nl_ask(
 ):
     """Convert a plain English rule into a verified boolean result."""
     try:
-        from nl.nl import ask
+        from boolean_algebra_engine.nl.nl import ask
         prov = _make_provider(provider, api_key, model, base_url)
         result = ask(sentence, provider=prov)
     except ImportError as e:
@@ -391,7 +391,7 @@ def nl_check_rules(
 ):
     """Check a list of plain English rules for contradictions and conflicts."""
     try:
-        from nl.nl import check_rules
+        from boolean_algebra_engine.nl.nl import check_rules
         prov = _make_provider(provider, api_key, model, base_url)
         result = check_rules(rules, provider=prov)
     except ImportError as e:
@@ -404,8 +404,22 @@ def nl_check_rules(
     print(json.dumps(result, indent=2))
 
 
-if __name__ == "__main__":
-    if len(sys.argv) == 1 and sys.stdin.isatty():
+_SUBCOMMANDS = {"ask", "check-rules", "main"}
+
+
+def entrypoint():
+    """Package entry point — dispatches expressions without requiring 'main' subcommand."""
+    args = sys.argv[1:]
+    if not args:
         _repl()
-    else:
+        return
+    first = args[0]
+    if first in _SUBCOMMANDS or first.startswith("-"):
         app()
+    else:
+        sys.argv.insert(1, "main")
+        app()
+
+
+if __name__ == "__main__":
+    entrypoint()

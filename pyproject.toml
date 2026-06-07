@@ -36,7 +36,7 @@ api-cache = ["fastapi>=0.100.0", "uvicorn>=0.20.0", "redis>=5.0.0"]
 dev = ["pytest>=8.0.0", "httpx>=0.24.0", "z3-solver>=4.12.0"]
 
 [project.scripts]
-boolcalc = "cli.main:app"
+boolcalc = "boolean_algebra_engine.cli.main:entrypoint"
 
 [project.urls]
 Homepage = "https://github.com/Shrivastava-Aditya/bool-LLM-ngn"
@@ -44,7 +44,7 @@ Repository = "https://github.com/Shrivastava-Aditya/bool-LLM-ngn"
 Issues = "https://github.com/Shrivastava-Aditya/bool-LLM-ngn/issues"
 
 [tool.setuptools.packages.find]
-include = ["boolean_algebra_engine*", "core*", "cli*", "mcp_server*", "api*", "nl*"]
+include = ["boolean_algebra_engine*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

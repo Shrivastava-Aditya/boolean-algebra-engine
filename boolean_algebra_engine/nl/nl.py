@@ -17,7 +17,7 @@ Public API:
   check_rules(rules, provider) → dict
 
 Quick start:
-  from nl.nl import ask, AnthropicProvider
+  from boolean_algebra_engine.nl.nl import ask, AnthropicProvider
   result = ask("lights on when door open or motion detected but not both",
                provider=AnthropicProvider())   # uses ANTHROPIC_API_KEY env var
 """
@@ -28,9 +28,9 @@ import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from core.evaluator import evaluate
-from core.synthesizer import synthesize
-from core.parser import validate
+from boolean_algebra_engine.core.evaluator import evaluate
+from boolean_algebra_engine.core.synthesizer import synthesize
+from boolean_algebra_engine.core.parser import validate
 
 
 # ---------------------------------------------------------------------------
@@ -326,7 +326,7 @@ def ask(sentence: str, provider: Provider | None = None) -> NLResult:
         ValueError: If the LLM cannot parse the sentence into a valid expression.
 
     Examples:
-        from nl.nl import ask, AnthropicProvider, OpenAIProvider, OllamaProvider
+        from boolean_algebra_engine.nl.nl import ask, AnthropicProvider, OpenAIProvider, OllamaProvider
 
         # Claude
         result = ask("door opens when key valid and not locked",
@@ -411,7 +411,7 @@ def check_rules(rules: list[str], provider: Provider | None = None) -> dict:
     Returns:
         Dictionary with per-rule analysis and pairwise conflict/equivalence checks.
     """
-    from mcp_server.server import check_prompt_logic as _check
+    from boolean_algebra_engine.mcp.server import check_prompt_logic as _check
 
     llm = provider or _default_provider()
     expressions = []

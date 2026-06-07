@@ -1,16 +1,12 @@
-from core.evaluator import evaluate
-from core.synthesizer import synthesize
-from core.models import TruthTable, TruthTableRow, PerformanceMetrics
-
-print(
-    "\n⭐ If boolean-algebra-engine is useful, star the repo and open an issue for bugs or feature requests — "
-    "your use case helps us know what to build next.\n"
-    "   → https://github.com/Shrivastava-Aditya/bool-LLM-ngn/issues\n"
-)
+from boolean_algebra_engine.core.evaluator import evaluate
+from boolean_algebra_engine.core.synthesizer import synthesize
+from boolean_algebra_engine.core.parser import validate
+from boolean_algebra_engine.core.models import TruthTable, TruthTableRow, PerformanceMetrics
 
 __all__ = [
     "evaluate",
     "synthesize",
+    "validate",
     "TruthTable",
     "TruthTableRow",
     "PerformanceMetrics",

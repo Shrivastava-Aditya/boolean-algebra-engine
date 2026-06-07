@@ -9,7 +9,7 @@ Tests three functions independently:
 Operator precedence under test: ! (NOT, highest) > . (AND) > ^ (XOR) > + (OR, lowest).
 """
 import pytest
-from core.parser import get_variables, validate, infix_to_prefix
+from boolean_algebra_engine.core.parser import get_variables, validate, infix_to_prefix
 
 
 # --- get_variables ---

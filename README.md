@@ -37,8 +37,7 @@ The small models aren't reasoning at all — they picked a default and stuck to 
 Zero dependencies. Works immediately after install.
 
 ```python
-from core.evaluator import evaluate
-from core.synthesizer import synthesize
+from boolean_algebra_engine import evaluate, synthesize
 
 # Does a contradiction exist?
 table, _ = evaluate("A.!A")
@@ -65,7 +64,7 @@ print(minimal)             # A.C+A.B
 
 ```bash
 pip install boolean-algebra-engine
-python -c "from core.evaluator import evaluate; t,_ = evaluate('A.!A'); print(t.satisfiable)"
+python -c "from boolean_algebra_engine import evaluate; t,_ = evaluate('A.!A'); print(t.satisfiable)"
 ```
 
 ```
@@ -307,8 +306,7 @@ Per-case strips (bottom row of the chart): tinyllama and llama3.2:3b show unifor
 ## Core API
 
 ```python
-from core.evaluator import evaluate
-from core.synthesizer import synthesize
+from boolean_algebra_engine import evaluate, synthesize
 
 # Forward: expression → truth table
 table, _ = evaluate("A.(B+C)")
@@ -322,7 +320,7 @@ print(minimal)            # A.C+A.B
 
 # Equivalence and satisfiability (via MCP server functions — no HTTP, direct call)
 # pip install boolean-algebra-engine[mcp]
-from mcp_server.server import equivalent, satisfiable
+from boolean_algebra_engine.mcp.server import equivalent, satisfiable
 
 print(equivalent("A.(B+C)", "A.B+A.C")["equivalent"])  # True — distributive law
 print(satisfiable("A.!A")["satisfiable"])               # False — contradiction
@@ -341,7 +339,7 @@ Wire the engine into Claude Desktop and Claude stops predicting boolean logic. I
   "mcpServers": {
     "boolean-algebra-engine": {
       "command": "python",
-      "args": ["-m", "mcp_server.server"]
+      "args": ["-m", "boolean_algebra_engine.mcp.server"]
     }
   }
 }

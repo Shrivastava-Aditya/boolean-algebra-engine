@@ -5,7 +5,7 @@ Tests the TruthTable, TruthTableRow, and EvaluationResult dataclasses directly,
 independent of the parser or evaluator. Uses a helper to build tables from raw
 output columns so tests don't depend on evaluate().
 """
-from core.models import TruthTable, TruthTableRow, EvaluationResult
+from boolean_algebra_engine.core.models import TruthTable, TruthTableRow, EvaluationResult
 
 
 def _make_table(outputs: list[int], variables: list[str] = ['A', 'B']) -> TruthTable:

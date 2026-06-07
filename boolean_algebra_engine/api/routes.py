@@ -32,10 +32,10 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from core.evaluator import evaluate as _evaluate
-from core.synthesizer import synthesize as _synthesize
-from core.parser import validate, infix_to_prefix
-from core.evaluator import _evaluate_prefix
+from boolean_algebra_engine.core.evaluator import evaluate as _evaluate
+from boolean_algebra_engine.core.synthesizer import synthesize as _synthesize
+from boolean_algebra_engine.core.parser import validate, infix_to_prefix
+from boolean_algebra_engine.core.evaluator import _evaluate_prefix
 
 app = FastAPI(
     title="Boolean Algebra Engine",
@@ -150,7 +150,7 @@ class NLCheckRulesRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 def _build_provider(provider: str, api_key: Optional[str], model: Optional[str], base_url: Optional[str]):
-    from nl.nl import AnthropicProvider, OpenAIProvider, OllamaProvider, OpenAICompatProvider
+    from boolean_algebra_engine.nl.nl import AnthropicProvider, OpenAIProvider, OllamaProvider, OpenAICompatProvider
     if provider == "anthropic":
         return AnthropicProvider(api_key=api_key, model=model or "claude-sonnet-4-6")
     if provider == "openai":
@@ -255,7 +255,7 @@ def equivalent(req: EquivalentRequest, request: Request, response: Response):
         if error:
             raise HTTPException(status_code=422, detail={"error": "invalid_expression", "message": error, "expression": expr})
 
-    from core.parser import get_variables
+    from boolean_algebra_engine.core.parser import get_variables
     vars1 = set(get_variables(req.expression1))
     vars2 = set(get_variables(req.expression2))
     all_vars = sorted(vars1 | vars2)
@@ -323,7 +323,7 @@ def check_rules(req: CheckRulesRequest, request: Request, response: Response):
         response.headers["X-Cache"] = "HIT"
         return cached
 
-    from mcp_server.server import check_prompt_logic
+    from boolean_algebra_engine.mcp.server import check_prompt_logic
     result = check_prompt_logic(req.rules)
 
     _cache_set(cache_key, result, ttl=3600)
@@ -342,7 +342,7 @@ def nl_ask(req: NLAskRequest, request: Request, response: Response):
         return cached
 
     try:
-        from nl.nl import ask
+        from boolean_algebra_engine.nl.nl import ask
         prov = _build_provider(req.provider, req.api_key, req.model, req.base_url)
         result = ask(req.sentence, provider=prov)
     except ValueError as e:
@@ -374,7 +374,7 @@ def nl_check_rules(req: NLCheckRulesRequest, request: Request, response: Respons
     _check_auth(request)
 
     try:
-        from nl.nl import check_rules as _check_rules
+        from boolean_algebra_engine.nl.nl import check_rules as _check_rules
         prov = _build_provider(req.provider, req.api_key, req.model, req.base_url)
         result = _check_rules(req.rules, provider=prov)
     except ValueError as e:

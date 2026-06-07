@@ -7,7 +7,7 @@ contradiction, tautology), variable auto-detection, minterm/maxterm indexing,
 and error handling for invalid expressions.
 """
 import pytest
-from core.evaluator import evaluate
+from boolean_algebra_engine.core.evaluator import evaluate
 
 
 # --- Basic operators ---

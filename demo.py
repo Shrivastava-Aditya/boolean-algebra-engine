@@ -67,7 +67,7 @@ def section_1():
     print("SECTION 1 — Core engine: evaluate each rule")
     print("=" * 60)
 
-    from core.evaluator import evaluate
+    from boolean_algebra_engine.core.evaluator import evaluate
 
     rules = {
         "Rule 1 — approve if good credit + verified income": "A.B",
@@ -97,8 +97,8 @@ def section_2():
     print("SECTION 2 — Synthesizer: minimal form + redundancy")
     print("=" * 60)
 
-    from core.evaluator import evaluate
-    from core.synthesizer import synthesize
+    from boolean_algebra_engine.core.evaluator import evaluate
+    from boolean_algebra_engine.core.synthesizer import synthesize
 
     # Rule 5 (A.B.C) should be redundant — it's a subset of Rule 1 (A.B)
     # and a subset of Rule 2 (C). Anyone satisfying Rule 5 already satisfies
@@ -131,9 +131,9 @@ def section_3():
     print("SECTION 3 — Equivalence checking")
     print("=" * 60)
 
-    from core.evaluator import evaluate
-    from core.parser import get_variables, infix_to_prefix
-    from core.evaluator import _evaluate_prefix
+    from boolean_algebra_engine.core.evaluator import evaluate
+    from boolean_algebra_engine.core.parser import get_variables, infix_to_prefix
+    from boolean_algebra_engine.core.evaluator import _evaluate_prefix
 
     pairs = [
         ("Rule 3 (!A) vs Rule 6 (!B)",
@@ -183,7 +183,7 @@ def section_4():
     print("SECTION 4 — Contradiction detection")
     print("=" * 60)
 
-    from core.evaluator import evaluate
+    from boolean_algebra_engine.core.evaluator import evaluate
 
     # Key conflict: Rule 2 says approve if C=1, Rule 3 says reject if A=0
     # What happens when A=0 AND C=1? Both fire simultaneously.
@@ -228,7 +228,7 @@ def section_5():
     print("SECTION 5 — Full rule audit via check_prompt_logic")
     print("=" * 60)
 
-    from mcp_server.server import check_prompt_logic
+    from boolean_algebra_engine.mcp.server import check_prompt_logic
 
     rules = ["A.B", "C", "!A", "!B.!C", "A.B.C", "!B"]
     result = check_prompt_logic(rules)
@@ -306,7 +306,7 @@ def section_7():
     print("""
   # Requires: ANTHROPIC_API_KEY (or swap to OpenAIProvider / OllamaProvider)
 
-  from nl.nl import ask, check_rules, AnthropicProvider, OllamaProvider
+  from boolean_algebra_engine.nl.nl import ask, check_rules, AnthropicProvider, OllamaProvider
 
   provider = AnthropicProvider()   # or OllamaProvider(model="llama3") — free, local
 
@@ -345,7 +345,7 @@ def section_8():
 
     print("""
   import numpy as np
-  from core.parser import get_variables, infix_to_prefix
+  from boolean_algebra_engine.core.parser import get_variables, infix_to_prefix
 
   expression = "T.(A+H.O).W.!I"   # deployment gate — 6 variables, 64 rows
   variables = get_variables(expression)
@@ -383,7 +383,7 @@ def section_9():
 
     print("""
   import pandas as pd
-  from core.evaluator import evaluate
+  from boolean_algebra_engine.core.evaluator import evaluate
 
   table, _ = evaluate("A.B + C")
 
@@ -430,7 +430,7 @@ def section_10():
     print("""
   import matplotlib.pyplot as plt
   import numpy as np
-  from core.evaluator import evaluate
+  from boolean_algebra_engine.core.evaluator import evaluate
 
   table, _ = evaluate("A.B + C")
 

@@ -6,8 +6,8 @@ ordering) but verify that the synthesized expression is logically equivalent to
 the original by comparing minterms after re-evaluation.
 """
 import pytest
-from core.evaluator import evaluate
-from core.synthesizer import synthesize
+from boolean_algebra_engine.core.evaluator import evaluate
+from boolean_algebra_engine.core.synthesizer import synthesize
 
 
 def assert_equivalent(expr1: str, expr2: str):

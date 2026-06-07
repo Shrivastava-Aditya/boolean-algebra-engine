@@ -5,9 +5,9 @@ Covers inputs that are valid but unusual, inputs that should fail cleanly,
 and synthesizer behaviour on near-full or near-empty truth tables.
 """
 import pytest
-from core.evaluator import evaluate
-from core.synthesizer import synthesize
-from core.parser import validate, get_variables
+from boolean_algebra_engine.core.evaluator import evaluate
+from boolean_algebra_engine.core.synthesizer import synthesize
+from boolean_algebra_engine.core.parser import validate, get_variables
 
 
 # --- Single variable ---

@@ -71,9 +71,9 @@ with st.sidebar:
 # ---------------------------------------------------------------------------
 
 def run_evaluate(expr):
-    from core.evaluator import evaluate
-    from core.synthesizer import synthesize
-    from core.parser import validate
+    from boolean_algebra_engine.core.evaluator import evaluate
+    from boolean_algebra_engine.core.synthesizer import synthesize
+    from boolean_algebra_engine.core.parser import validate
     error = validate(expr)
     if error:
         return None, None, None, error
@@ -132,8 +132,8 @@ FRAMEWORK_MAP = {
 
 
 def _run_audit(controls):
-    from core.evaluator import evaluate
-    from core.synthesizer import synthesize
+    from boolean_algebra_engine.core.evaluator import evaluate
+    from boolean_algebra_engine.core.synthesizer import synthesize
     parsed = []
     for label, expr in controls.items():
         try:
@@ -402,8 +402,8 @@ if mode == "Expression":
                 if error2:
                     st.error(f"Invalid expression: {error2}")
                 else:
-                    from core.parser import get_variables, infix_to_prefix
-                    from core.evaluator import _evaluate_prefix
+                    from boolean_algebra_engine.core.parser import get_variables, infix_to_prefix
+                    from boolean_algebra_engine.core.evaluator import _evaluate_prefix
                     vars1 = set(table.variables)
                     vars2 = set(table2.variables)
                     all_vars = sorted(vars1 | vars2)
@@ -446,7 +446,7 @@ elif mode == "Rule Auditor":
         if not rules:
             st.warning("Enter at least one rule.")
         else:
-            from mcp_server.server import check_prompt_logic
+            from boolean_algebra_engine.mcp.server import check_prompt_logic
             result = check_prompt_logic(rules)
             summary = result["summary"]
 
@@ -556,7 +556,7 @@ elif mode == "Plain English (NL)":
         base_url = None
 
     def make_provider():
-        from nl.nl import AnthropicProvider, OpenAIProvider, OllamaProvider, OpenAICompatProvider
+        from boolean_algebra_engine.nl.nl import AnthropicProvider, OpenAIProvider, OllamaProvider, OpenAICompatProvider
         if provider_name == "anthropic":
             return AnthropicProvider(api_key=api_key or None, model=model or "claude-sonnet-4-6")
         if provider_name == "openai":
@@ -575,7 +575,7 @@ elif mode == "Plain English (NL)":
             else:
                 with st.spinner("Parsing and verifying..."):
                     try:
-                        from nl.nl import ask
+                        from boolean_algebra_engine.nl.nl import ask
                         result = ask(sentence.strip(), provider=make_provider())
 
                         c1, c2, c3, c4 = st.columns(4)
@@ -607,7 +607,7 @@ elif mode == "Plain English (NL)":
             else:
                 with st.spinner(f"Parsing {len(rules)} rules..."):
                     try:
-                        from nl.nl import check_rules
+                        from boolean_algebra_engine.nl.nl import check_rules
                         result = check_rules(rules, provider=make_provider())
                         summary = result.get("summary", {})
 

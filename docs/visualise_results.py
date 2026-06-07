@@ -16,7 +16,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
-from core.evaluator import evaluate
+from boolean_algebra_engine.core.evaluator import evaluate
 
 BG     = "#0d1117"
 PANEL  = "#161b22"
