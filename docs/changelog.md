@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.3.0 — 2026-06-07
+Fix CLI entry point and clean up package namespace.
+
+- `boolcalc "A+B"` now works directly — no longer requires the hidden `main` subcommand
+- All submodules (`core`, `mcp`, `nl`, `cli`, `api`) moved under the `boolean_algebra_engine` namespace — no more top-level package pollution on install
+- `from boolean_algebra_engine import evaluate, synthesize` is now the canonical import
+- MCP server path updated to `python -m boolean_algebra_engine.mcp.server`
+- Backward-compat shims retained at `core/` and `mcp_server/` for repo runners
+- README code examples updated to match actual working imports
+
+## v0.2.3 — 2026-05-24
+Add dynamic shields.io badges and switch downloads badge to pepy.tech.
+
 ## v0.1.11 — 2026-05-23
 Add live web dashboard and fix benchmark timeout/crash bugs.
 
