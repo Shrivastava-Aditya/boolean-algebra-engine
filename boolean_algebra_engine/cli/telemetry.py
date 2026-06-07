@@ -30,7 +30,7 @@ import urllib.request
 import uuid
 from pathlib import Path
 
-_VERSION = "0.3.3"
+_VERSION = "0.3.4"
 _GC_URL = "https://shrvx.goatcounter.com/count"
 _API_URL = os.environ.get("BOOLCALC_TELEMETRY_URL", "")
 
@@ -46,6 +46,7 @@ _PROMPT = """\
 
   > """
 
+_WELCOME = "  \033[2m→ Thanks for installing LLM-Engine! Star or open an issue: github.com/Shrivastava-Aditya/bool-LLM-ngn\033[0m"
 _NUDGE = "  \033[2m→ Finding this useful? Star or open an issue: github.com/Shrivastava-Aditya/bool-LLM-ngn\033[0m"
 _NUDGE_EVERY = 10   # show every N runs
 _NUDGE_MAX   = 3    # stop after showing this many times
@@ -90,6 +91,8 @@ def maybe_prompt() -> None:
     config = _load()
     if "opted_in" in config:
         return
+
+    print(_WELCOME)
 
     try:
         answer = input(_PROMPT).strip().lower()

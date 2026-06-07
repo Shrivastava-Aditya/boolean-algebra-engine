@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.4 — 2026-06-07
+- First-run welcome message: dim one-liner shown once on fresh install prompting to star/open an issue on GitHub
+
 ## v0.3.3 — 2026-06-07
 - Non-intrusive GitHub feedback nudge — dim one-liner shown every 10 runs, max 3 times ever, never blocking
 - Nudge tracks `run_count` and `nudge_count` in `~/.config/boolcalc/telemetry.json`
