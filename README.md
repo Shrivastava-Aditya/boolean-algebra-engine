@@ -1,5 +1,7 @@
 # boolean-algebra-engine
 
+![PyPI Downloads](https://img.shields.io/pypi/dm/boolean-algebra-engine) ![PyPI Version](https://img.shields.io/pypi/v/boolean-algebra-engine) ![License](https://img.shields.io/pypi/l/boolean-algebra-engine)
+
 **Your AI agent's decision rules might contradict each other. LLMs can't reliably catch that. This engine can — provably, in under 10ms.**
 
 AI agents with decision logic — loan approval, compliance checks, access control, policy enforcement — run on boolean rules written by humans. Nobody verifies those rules don't conflict before the agent acts on them. This engine does.
