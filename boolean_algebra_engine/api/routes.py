@@ -250,10 +250,14 @@ def _build_provider(provider: str, api_key: Optional[str], model: Optional[str],
 @app.get("/llms.txt", response_class=Response)
 def llms_txt():
     import pathlib
-    p = pathlib.Path(__file__).parents[3] / "llms.txt"
-    if not p.exists():
-        raise HTTPException(status_code=404, detail="llms.txt not found")
-    return Response(content=p.read_text(), media_type="text/plain")
+    candidates = [
+        pathlib.Path("/app/llms.txt"),                      # Docker (WORKDIR /app)
+        pathlib.Path(__file__).parents[2] / "llms.txt",    # pip-installed, COPY . . overlay
+    ]
+    for p in candidates:
+        if p.exists():
+            return Response(content=p.read_text(), media_type="text/plain")
+    raise HTTPException(status_code=404, detail="llms.txt not found")
 
 
 @app.get("/health")
