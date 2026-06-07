@@ -346,12 +346,14 @@ def nl_ask(
         result = ask(sentence, provider=prov)
     except ImportError as e:
         err_console.print(f"[red]Error:[/red] {e}")
+        telemetry.send("ask", success=False, error=type(e).__name__, provider=provider)
         raise typer.Exit(1)
     except Exception as e:
         err_console.print(f"[red]Error:[/red] {e}")
+        telemetry.send("ask", success=False, error=type(e).__name__, provider=provider)
         raise typer.Exit(1)
 
-    telemetry.send("ask", provider=provider, variable_count=len(result.variables))
+    telemetry.send("ask", success=True, provider=provider, variable_count=len(result.variables))
 
     if format == Format.json:
         print(json.dumps({
@@ -405,12 +407,14 @@ def nl_check_rules(
         result = check_rules(rules, provider=prov)
     except ImportError as e:
         err_console.print(f"[red]Error:[/red] {e}")
+        telemetry.send("check-rules", success=False, error=type(e).__name__, provider=provider)
         raise typer.Exit(1)
     except Exception as e:
         err_console.print(f"[red]Error:[/red] {e}")
+        telemetry.send("check-rules", success=False, error=type(e).__name__, provider=provider)
         raise typer.Exit(1)
 
-    telemetry.send("check-rules", provider=provider, rule_count=len(rules))
+    telemetry.send("check-rules", success=True, provider=provider, rule_count=len(rules))
 
     print(json.dumps(result, indent=2))
     telemetry.maybe_nudge()
