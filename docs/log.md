@@ -632,6 +632,43 @@ The variable curve (hallucination rate vs complexity, per model) is the finding 
 
 ---
 
+## Session — 2026-06-07 (v0.3.0 → v0.3.6)
+
+### Prompts and outcomes
+
+| Prompt | Outcome |
+|---|---|
+| Fix the boolcalc entry point and import namespace | Moved all subpackages under `boolean_algebra_engine/`, added `entrypoint()`, fixed `boolcalc "A+B"` direct invocation |
+| Fix `--help` showing internal `main` subcommand | Added `hidden=True` to `@app.command()` |
+| Push to prod | Pushed to both remotes, published v0.3.0 to PyPI |
+| Fix rate limiting on API and `--help` | Added `slowapi` rate limiting (10/min NL, 60/min engine), bumped v0.3.1 |
+| Add request logging and usage insights | Structured JSON middleware, `/stats` endpoint, in-memory `_stats` — v0.3.1 |
+| Build telemetry | `cli/telemetry.py` — opt-in prompt, GoatCounter backend, fire-and-forget daemon thread — v0.3.2 |
+| Non-intrusive GitHub feedback nudge | `maybe_nudge()` — dim one-liner every 10 runs, max 3 times — v0.3.3 |
+| Welcome message on first `pip install` / first run | `_WELCOME` line shown once on first `boolcalc` run — v0.3.4 |
+| Test fresh install without `[cli]` | Crash found — `ModuleNotFoundError: typer`. Fixed with thin `cli/entry.py` wrapper — v0.3.5 |
+| GoatCounter observability for install and nudge | Pings `/cli/install/welcome`, `/cli/install/telemetry-yes\|no`, `/cli/nudge/N` — v0.3.6 |
+| Where is telemetry output logged? | Gap identified — opted-in structured data goes nowhere. GoatCounter is aggregate only |
+| Grafana / Prometheus? | Deferred — overkill at 40 downloads. Revisit at 500+ active users |
+| Use PostHog? | Agreed — structured per-user event timeline. Pending account creation |
+| Document project dependencies and architecture | `ARCHITECTURE.md` written and pushed to both repos |
+| Internal doc for services, infra, credentials | `docs/INTERNAL.md` written and pushed to private repo only |
+| VM bootstrap — can we migrate without path lock-in? | Confirmed zero path dependencies. VM bootstrap section added to `INTERNAL.md` |
+| Log session prompts to log.md | This entry |
+
+### Decisions made this session
+
+| Decision | Reason |
+|---|---|
+| Thin `cli/entry.py` wrapper | Lets `main.py` import typer freely; entry point catches missing extras cleanly |
+| GoatCounter for install/nudge pings | Already in use, zero new infrastructure, anonymous |
+| PostHog deferred until account created | Right tool, wrong moment — doing architecture first |
+| `INTERNAL.md` private only | Contains service accounts, env vars, VM details — not for public repo |
+| No Grafana/Prometheus | Long-running service tool — CLI is one-shot process, wrong fit at current scale |
+| Org/master ID deferred | Overhead not justified until paid services or multiple contributors |
+
+---
+
 ## Decisions Made
 
 | Decision | Reason |
