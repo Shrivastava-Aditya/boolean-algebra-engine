@@ -5,24 +5,32 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "boolean-algebra-engine"
 version = "0.3.17"
-description = "Deterministic logic layer for AI agents — catch logical contradictions in system prompts, rules, and agent reasoning"
+description = "Catch logic contradictions in AI prompts, rules, and compliance policies — deterministic truth table engine with MCP, CLI, and NL support"
 readme = "README.md"
 license = "AGPL-3.0-only"
 requires-python = ">=3.10"
 authors = [
     { name = "Aditya Shrivastava", email = "aditya.shrivastava.architect@proton.me" }
 ]
-keywords = ["boolean", "algebra", "logic", "truth-table", "quine-mccluskey", "digital-logic"]
+keywords = [
+    "boolean", "algebra", "logic", "truth-table", "quine-mccluskey", "digital-logic",
+    "ai", "llm", "agent", "prompt", "contradiction", "rule-engine", "mcp",
+    "compliance", "sat", "logic-verification", "soc2", "iso27001",
+    "rule-conflict", "prompt-validation", "ai-safety"
+]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Quality Assurance",
 ]
 
 [project.optional-dependencies]
@@ -42,7 +50,9 @@ boolcalc = "boolean_algebra_engine.cli.entry:entrypoint"
 [project.urls]
 Homepage = "https://github.com/Shrivastava-Aditya/boolean-algebra-engine"
 Repository = "https://github.com/Shrivastava-Aditya/boolean-algebra-engine"
+Documentation = "https://github.com/Shrivastava-Aditya/boolean-algebra-engine#readme"
 Issues = "https://github.com/Shrivastava-Aditya/boolean-algebra-engine/issues"
+Changelog = "https://github.com/Shrivastava-Aditya/boolean-algebra-engine/releases"
 
 [tool.setuptools.packages.find]
 include = ["boolean_algebra_engine*"]
