@@ -14,7 +14,7 @@ __all__ = [
 
 
 def _ping_install() -> None:
-    """Fire a one-time anonymous install ping to PostHog on first import.
+    """Fire an anonymous install ping to PostHog once per version per machine.
 
     Uses only stdlib — no posthog package required. Runs in a daemon thread
     so it never blocks import or process exit. Skipped if BOOLCALC_NO_TELEMETRY=1.
@@ -34,16 +34,28 @@ def _ping_install() -> None:
             import importlib.metadata
             from pathlib import Path
 
+            version = importlib.metadata.version("boolean-algebra-engine")
+
             config_dir = Path(
                 os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")
             ) / "boolcalc"
-            flag = config_dir / "install_id"
+            state_file = config_dir / "install_state.json"
 
-            if flag.exists():
+            # Load existing state
+            state = {}
+            if state_file.exists():
+                try:
+                    state = json.loads(state_file.read_text())
+                except Exception:
+                    pass
+
+            # Skip if already pinged for this version
+            if version in state.get("seen_versions", []):
                 return
 
-            # Skip dev machines
+            # Fetch IP — skip dev machines, pass explicitly for GeoIP
             _DEV_IPS = {"80.225.206.105"}
+            current_ip = None
             try:
                 current_ip = urllib.request.urlopen(
                     "https://api.ipify.org", timeout=2
@@ -53,21 +65,26 @@ def _ping_install() -> None:
             except Exception:
                 pass
 
+            # Persist state before network call so a crash doesn't cause duplicate pings
+            install_id = state.get("install_id") or str(uuid.uuid4())
+            seen = state.get("seen_versions", [])
+            seen.append(version)
             config_dir.mkdir(parents=True, exist_ok=True)
-            install_id = str(uuid.uuid4())
-            flag.write_text(install_id)
+            state_file.write_text(json.dumps({"install_id": install_id, "seen_versions": seen}))
 
-            version = importlib.metadata.version("boolean-algebra-engine")
+            props = {
+                "version": version,
+                "os": platform.system(),
+                "python": f"{platform.python_version_tuple()[0]}.{platform.python_version_tuple()[1]}",
+            }
+            if current_ip:
+                props["$ip"] = current_ip
 
             payload = json.dumps({
                 "api_key": "phc_Am4NNyVXotVffz6rcBy8xZVUZeaJCCbbHMu63pWMz3M8",
                 "event": "install",
                 "distinct_id": install_id,
-                "properties": {
-                    "version": version,
-                    "os": platform.system(),
-                    "python": f"{platform.python_version_tuple()[0]}.{platform.python_version_tuple()[1]}",
-                },
+                "properties": props,
             }).encode()
 
             req = urllib.request.Request(
