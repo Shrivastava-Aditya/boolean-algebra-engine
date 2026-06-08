@@ -47,7 +47,11 @@ try:
 except ImportError:
     _ph = None
 
-_VERSION = "0.3.9"
+try:
+    import importlib.metadata as _meta
+    _VERSION = _meta.version("boolean-algebra-engine")
+except Exception:
+    _VERSION = "unknown"
 _GC_URL = "https://shrvx.goatcounter.com/count"
 _API_URL = os.environ.get("BOOLCALC_TELEMETRY_URL", "")
 
