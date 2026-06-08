@@ -42,6 +42,7 @@ try:
     _ph = _Posthog(
         project_api_key="phc_Am4NNyVXotVffz6rcBy8xZVUZeaJCCbbHMu63pWMz3M8",
         host="https://us.i.posthog.com",
+        disable_geoip=False,
     )
     atexit.register(_ph.shutdown)
 except ImportError:
