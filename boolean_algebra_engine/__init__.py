@@ -18,6 +18,9 @@ def _ping_install() -> None:
 
     Uses only stdlib — no posthog package required. Runs in a daemon thread
     so it never blocks import or process exit. Skipped if BOOLCALC_NO_TELEMETRY=1.
+
+    Shares telemetry.json with the CLI so PostHog sees a single distinct_id
+    across install pings and command events.
     """
     import os
     if os.environ.get("BOOLCALC_NO_TELEMETRY"):
@@ -39,9 +42,9 @@ def _ping_install() -> None:
             config_dir = Path(
                 os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")
             ) / "boolcalc"
-            state_file = config_dir / "install_state.json"
+            # Share telemetry.json with cli/telemetry.py so install_id is consistent
+            state_file = config_dir / "telemetry.json"
 
-            # Load existing state
             state = {}
             if state_file.exists():
                 try:
@@ -65,12 +68,15 @@ def _ping_install() -> None:
             except Exception:
                 pass
 
-            # Persist state before network call so a crash doesn't cause duplicate pings
+            # Reuse existing install_id if CLI has already written one; otherwise mint a new one
             install_id = state.get("install_id") or str(uuid.uuid4())
             seen = state.get("seen_versions", [])
             seen.append(version)
+
+            state["install_id"]    = install_id
+            state["seen_versions"] = seen
             config_dir.mkdir(parents=True, exist_ok=True)
-            state_file.write_text(json.dumps({"install_id": install_id, "seen_versions": seen}))
+            state_file.write_text(json.dumps(state, indent=2))
 
             props = {
                 "version": version,
