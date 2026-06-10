@@ -1,4 +1,3 @@
-<img width="1151" height="936" alt="image" src="https://github.com/user-attachments/assets/b52522bf-b8fa-4718-8b0d-d4d02c46e53d" /># boolean-algebra-engine
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20623462.svg)](https://doi.org/10.5281/zenodo.20623462)
 ![PyPI Downloads](https://static.pepy.tech/badge/boolean-algebra-engine/month) ![PyPI Version](https://img.shields.io/pypi/v/boolean-algebra-engine) ![License](https://img.shields.io/pypi/l/boolean-algebra-engine)
 
